@@ -33,5 +33,5 @@ pip show robotic
 </p>
 
 <p align="center">
-  <img src="https://github.com/berk-cicek/HMaP/blob/main/misc/Realrobot.png" alt="HMaP2"/>
+  <img src="https://github.com/berk-cicek/HMaP/blob/main/misc/Realrobot.JPG" alt="HMaP2"/>
 </p>
