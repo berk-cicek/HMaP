@@ -1,4 +1,4 @@
-# IKOMO: Manipulation Planner for Complex Reasoning Tasks
+# H-MaP: Iterative and Hybrid Sequential Manipulation Planner
 ## Overview
 <p align="center">
   <img src="https://github.com/berk-cicek/HMaP/blob/main/misc/Diagram.svg" alt="HMaP"/>
