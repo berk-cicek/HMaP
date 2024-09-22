@@ -56,6 +56,7 @@ int main(int argc, char* argv[]) {
     double filter = 0.01;
     std::string video_path = "video/config";
     int total_obstacle_count = 1;
+    int waypoint_factor = 2;
 
     // Get camera info
     for (uint i = 0; i < 3; i++){
@@ -87,7 +88,7 @@ int main(int argc, char* argv[]) {
         C2.view(true, "Randomized Configuration");
 
         // Generate waypoints
-        HMAPBiman hmap_biman(C, C2, qF, q_obs, target, total_obstacle_count, tool_list, gripper_list, filter, video_path, true);
+        HMAPBiman hmap_biman(C, C2, qF, q_obs, target, total_obstacle_count, tool_list, gripper_list, filter, video_path, waypoint_factor, true);
         if(hmap_biman.run()){
             serialize_csv(dictionary_cam, base_name + "cam_info.csv");
             serialize_csv(path, base_name + "waypoint_"+std::to_string(count) + ".csv");

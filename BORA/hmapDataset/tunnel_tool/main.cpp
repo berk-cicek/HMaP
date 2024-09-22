@@ -59,6 +59,7 @@ int main(int argc, char* argv[]) {
 
     // Initialize Configuration and BotOp
     rai::Configuration C;
+    
     rai::Configuration C_copy;
     C.addFile("HMAP_tunnel_tool_conf.g");  
     C_copy.addFile("HMAP_tunnel_tool_conf.g"); 
