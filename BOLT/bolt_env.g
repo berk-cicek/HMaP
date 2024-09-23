@@ -26,7 +26,7 @@ lock2_side (wall):{ X:"t(0.1 0.15 0.66) d(0 0 0 1)" , shape:box, size: [0.2 0.03
 
 lock2_side2 (wall):{ X:"t(0.1 0.35 0.66) d(0 0 0 1)" , shape:box, size: [0.2 0.03 0.14 0.5], color: [0.996 0.478 0.211], mass: .1,contact:-1}
 
-Include: <../../rai-robotModels/panda/panda_tunnel.g>
+Include: <../rai-robotModels/panda/panda_tunnel.g>
 
 Edit panda_link0{ X: "t(-0.2 0.9 .59) d(-90 0 0 1)" }
 #Edit panda_link0{ X: "t(0. -0.1 .65) d(90 0 0 1)" }
