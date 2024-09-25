@@ -11,9 +11,10 @@ tunnel (world){
 tunnel_top (tunnel):{ Q:"t(-0.3 0.25 0.165) d(0 0 0 1)" , shape:box, size: [0.3 0.14 0.03 0.5], color: [1 0.5 0], mass: .1,contact:-1}
 tunnel_side (tunnel):{ Q:"t(-0.3 0.19 0.08) d(0 0 0 1)" , shape:box, size: [0.3 0.03 0.14 0.5], color: [1 0.5 0], mass: .1,contact:-1}
 tunnel_side2 (tunnel):{ Q:"t(-0.3 0.31 0.08) d(0 0 0 1)" , shape:box, size: [0.3 0.03 0.14 0.5], color: [1 0.5 0], mass: .1,contact:-1}
-box (tunnel){
-  shape:ssBox, Q: "t(-0.3 0.25 .09001) d(0 0 0 1)", size:[0.3 .04 .05 .04], color:[0 1 1], mass: .1, contact: 1,
-  joint:trans3, limits: [-10,10, -10,10 ,-10,10 ]
+
+box (world){
+  shape:ssBox, Q: "t(0 0 0) d(0 0 0 1)", size:[0.3 .04 .05 .04], color:[0 1 1], mass: .1, contact: 1,
+  joint:free, limits: [-10,10,-10,10,-10,10,-4,4,-4,4,-4,4,-4,4]
 }
 
 contact_point(box){

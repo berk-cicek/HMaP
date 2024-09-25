@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     std::string video_path = "video/config";
     int total_obstacle_count = 1;
     int waypoint_factor = 2;
-    arr qF = {0.20, -0.57, 1.29, -1, 0, 0, 0};
+    arr qF = {0.20, -0.57, 1.29, 1, 0, 0, 0};
     arr q_obs = {-0.19, -0.4, 0.95, 1, 0, 0, 0};
     C2.setJointState(C.getFrame("box")->getPose());
     
