@@ -10,7 +10,7 @@ struct Quaternion {
 };
 rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {0.7, 0, 0, 0.7});
 void randomizeBox(rai::Configuration& C, rai::Configuration& C2);
-void randomizeTunnel(rai::Configuration& C, rai::Configuration& C2, StringA& all_frames, arr& qF);
+void randomizeTunnel(rai::Configuration& C, rai::Configuration& C2, StringA& all_frames);
 double degreesToRadians(double degrees);
 Quaternion eulerToQuaternion(double roll, double pitch, double yaw);
 bool RRT(rai::Configuration& C2, const arr& qF, arr& path, bool view = true, double rrt_extend_length = 0.04);
@@ -33,18 +33,18 @@ int main(int argc, char* argv[]) {
     // Initialize Configuration and BotOp
     rai::Configuration C;
     rai::Configuration C_copy;
-    C.addFile("HMAP_tunnel_conf.g");  
-    C_copy.addFile("HMAP_tunnel_conf.g"); 
+    C.addFile("../../HMAP/config/tunnel/HMAP_tunnel_conf.g");  
+    C_copy.addFile("../../HMAP/config/tunnel/HMAP_tunnel_conf.g"); 
 
     rai::Configuration C2;
     rai::Configuration C2_copy;
-    C2.addFile("HMAP_tunnel_actuated_conf.g");  
-    C2_copy.addFile("HMAP_tunnel_actuated_conf.g");
+    C2.addFile("../../HMAP/config/tunnel/HMAP_tunnel_actuated_conf.g");  
+    C2_copy.addFile("../../HMAP/config/tunnel/HMAP_tunnel_actuated_conf.g");
 
     C.view(true, "Initial Configuration");
 
     StringA all_frames = C.getFrameNames();
-    uint count = 0;
+    uint count = 70;
     uint sample_count = 500;
     std::map<std::string, arr> dictionary_cam;
     std::string target = "box";
@@ -63,23 +63,25 @@ int main(int argc, char* argv[]) {
     }
 
     for(uint i = 0; i < sample_count; i++) {
-        std::string base_name = "sample/tunnel" + std::to_string(count) + "/";
-        arr qF = {0.5, 0.25, 0.14, 1, 0, 0, 0};
         C = C_copy;
         C2 = C2_copy;
         arr path;
         arr contact_points;
-        addMarker(C, {qF(0), qF(1), qF(2)}, "cp", "tunnel", 0.2, false);
+
+        std::string base_name = "sample/tunnel" + std::to_string(count) + "/";
+        arr qF = {0.5, 0.25, 0.14, 1, 0, 0, 0};
+        addMarker(C, {qF(0), qF(1), qF(2)}, "wp", "tunnel", 0.2, false, {qF(3), qF(4), qF(5), qF(6)});
 
         // Randomize box
         randomizeBox(C, C2);
         
         // Randomize the tunnel
-        randomizeTunnel(C, C2, all_frames, qF);
+        randomizeTunnel(C, C2, all_frames);
 
         C2.setJointState(C.getFrame("box")->getPose());
         
-        qF = C.getFrame("cp")->getPosition().append({qF(3), qF(4), qF(5), qF(6)});
+        qF = C.getFrame("wp")->getPose();
+
         C2.view(false, "Randomized Configuration");
 
         // Generate waypoints
@@ -145,7 +147,7 @@ void randomizeBox(rai::Configuration& C, rai::Configuration& C2){
 }
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------*/
-void randomizeTunnel(rai::Configuration& C, rai::Configuration& C2, StringA& all_frames, arr& qF){
+void randomizeTunnel(rai::Configuration& C, rai::Configuration& C2, StringA& all_frames){
         rai::Frame* tunnel = C.getFrame("tunnel");
         rai::Frame* tunnel2 = C2.getFrame("tunnel");
         arr rpy_tunnel = {0, 0, rnd.uni(-6, 6)};
@@ -156,7 +158,6 @@ void randomizeTunnel(rai::Configuration& C, rai::Configuration& C2, StringA& all
         tunnel2->setQuaternion({q_tunnel.w, q_tunnel.x, q_tunnel.y, q_tunnel.z});    
         tunnel2->setPosition(xyz_tunnel);
         double scale_tunnel = rnd.uni(0.9, 1.1);
-        qF += {xyz_tunnel(0), xyz_tunnel(1), xyz_tunnel(2), -1+q_tunnel.w, q_tunnel.x, q_tunnel.y, q_tunnel.z};
         for (const auto& frame : all_frames){
             if (frame.contains("tunnel_")) {
                 rai::Frame* obj = C.getFrame(frame);

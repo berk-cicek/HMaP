@@ -72,10 +72,10 @@ private:
     bool RRT(rai::Configuration& C2, arr& path, bool view = true, double rrt_extend_length = 0.04);
     arr getCameraView(rai::Configuration& C, const std::string& cam_name, const std::string& target, const double filter = 0.5);
     arr candidateContactPoint(rai::Configuration& C, const arr& pts, const int iter, bool isTransform = true);
-    const std::string generateContactPoint(rai::Configuration& C, const std::string& target, const std::string& waypoint, std::string& contact_point, std::string& tool);
+    const std::string generateContactPoint(rai::Configuration& C, const std::string& target, const std::string& waypoint, std::string& contact_point);
     double calibSkeleton(rai::Configuration& C);
     std::shared_ptr<SolverReturn> homeSkeleton(rai::Configuration& C, const std::string& l_gripper, const std::string& r_gripper, const std::string& l_gripper_home, const std::string& r_gripper_home);
-    std::shared_ptr<SolverReturn> moveSkeleton(rai::Configuration& C, const std::string& gripper, const std::string& target, const std::string& tool, const std::string& contact_point, const std::string& waypoint, const bool isTrial=false);
+    std::shared_ptr<SolverReturn> moveSkeleton(rai::Configuration& C, const std::string& gripper, const std::string& target, const std::string& contact_point, const std::string& waypoint, const bool isTrial=false);
     double toolSkeleton(rai::Configuration& C, const std::string& tool, const std::string& target, const std::string& gripper, const std::string& final_pose, const bool isTrial = false);
     void toolSelection(rai::Configuration& C, const std::string waypoint, const std::string target, std::string& gripper_out, std::string& tool_out);
     void homeTool(rai::Configuration& C, const std::string& gripper, const std::string& tool);

@@ -9,16 +9,11 @@ int main(int argc, char* argv[]) {
 
     // Initialize Configuration and BotOp
     rai::Configuration C;
-    C.addFile("HMAP_tunnel_tool_env.g");  
+    C.addFile("../../HMAP/config/tunnel_tool/HMAP_tunnel_tool_conf.g");  
 
     rai::Configuration C2;
-    C2.addFile("HMAP_tunnel_tool_actuated_conf.g");  
+    C2.addFile("../../HMAP/config/tunnel_tool/HMAP_tunnel_tool_actuated_conf.g");  
     
-    C.addFile(rai::raiPath("../rai-robotModels/panda/panda_tunnel.g"), "r_");
-    C.addFile(rai::raiPath("../rai-robotModels/panda/panda_tunnel.g"), "l_");
-    C.getFrame("l_panda_link0")->setPose(rai::Transformation(rai::Vector(0.3, -0.1, .05), rai::Quaternion(0.7073883, 0., 0., 0.7068252)));
-    C.getFrame("r_panda_link0")->setPose(rai::Transformation(rai::Vector(-1, 0.4, .05), rai::Quaternion(1, 0., 0., 0)));
-
     C.view(true, "Initial Configuration");
 
     std::string target = "box";
@@ -28,7 +23,7 @@ int main(int argc, char* argv[]) {
     std::string video_path = "video/";
     int total_obstacle_count = 0;
     int waypoint_factor = 2;
-    arr qF = {-0.7, -0.4, .09001, 0, 0, 0, 1};
+    arr qF = {-0.7, -0.4, .09001, 1, 0, 0, 0};
     arr q_obs = {};
     C2.setJointState(C.getFrame("box")->getPose());
 

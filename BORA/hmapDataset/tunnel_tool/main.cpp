@@ -37,7 +37,7 @@ struct Quaternion {
 rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {0.7, 0, 0, 0.7});
 void randomizeBox(rai::Configuration& C, rai::Configuration& C2);
 void randomizeTunnel(rai::Configuration& C, rai::Configuration& C2, StringA& all_frames);
-void randomizeBin(rai::Configuration& C, rai::Configuration& C2, StringA& all_frames, arr& qF);
+void randomizeBin(rai::Configuration& C, rai::Configuration& C2, StringA& all_frames);
 double degreesToRadians(double degrees);
 Quaternion eulerToQuaternion(double roll, double pitch, double yaw);
 bool RRT(rai::Configuration& C2, const arr& qF, arr& path, arr& contact_points, bool view = true, double rrt_extend_length = 0.04);
@@ -61,13 +61,13 @@ int main(int argc, char* argv[]) {
     rai::Configuration C;
     
     rai::Configuration C_copy;
-    C.addFile("HMAP_tunnel_tool_conf.g");  
-    C_copy.addFile("HMAP_tunnel_tool_conf.g"); 
+    C.addFile("../../HMAP/config/tunnel_tool/HMAP_tunnel_tool_conf.g");  
+    C_copy.addFile("../../HMAP/config/tunnel_tool/HMAP_tunnel_tool_conf.g"); 
 
     rai::Configuration C2;
     rai::Configuration C2_copy;
-    C2.addFile("HMAP_tunnel_tool_actuated_conf.g");  
-    C2_copy.addFile("HMAP_tunnel_tool_actuated_conf.g");
+    C2.addFile("../../HMAP/config/tunnel_tool/HMAP_tunnel_tool_actuated_conf.g");  
+    C2_copy.addFile("../../HMAP/config/tunnel_tool/HMAP_tunnel_tool_actuated_conf.g");
 
     C.view(true, "Initial Configuration");
 
@@ -85,12 +85,15 @@ int main(int argc, char* argv[]) {
     }
 
     for(uint i = 0; i < sample_count; i++) {
-        std::string base_name = "sample/tunnel_tool_" + std::to_string(count) + "/";
-        arr qF = {-0.7, -0.4, 0.09001};
         C = C_copy;
         C2 = C2_copy;
         arr path;
         arr contact_points;
+
+        std::string base_name = "sample/tunnel_tool_" + std::to_string(count) + "/";
+        arr qF = {-0.7, -0.4, .09001, 1, 0, 0, 0};
+
+        addMarker(C, {qF(0), qF(1), qF(2)}, "wp", "bin", 0.2, false, {qF(3), qF(4), qF(5), qF(6)});
 
         // Randomize box
         randomizeBox(C, C2);
@@ -99,7 +102,7 @@ int main(int argc, char* argv[]) {
         randomizeTunnel(C, C2, all_frames);
 
         // Randomize the bin
-        randomizeBin(C, C2, all_frames, qF);
+        randomizeBin(C, C2, all_frames);
 
         // Randomize tool
         for(const auto& t : tool_list){
@@ -110,6 +113,9 @@ int main(int argc, char* argv[]) {
             tool->setColor({rnd.uni(), rnd.uni(), rnd.uni()});
         }
 
+        C2.setJointState(C.getFrame("box")->getPose());
+        qF = C.getFrame("wp")->getPose();
+        
         // Generate waypoints
         if(RRT(C2, qF, path, contact_points, false)){
             serialize_csv(dictionary_cam, base_name + "cam_info.csv");
@@ -198,7 +204,7 @@ void randomizeTunnel(rai::Configuration& C, rai::Configuration& C2, StringA& all
 }
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------*/
-void randomizeBin(rai::Configuration& C,rai::Configuration& C2, StringA& all_frames, arr& qF){
+void randomizeBin(rai::Configuration& C,rai::Configuration& C2, StringA& all_frames){
     rai::Frame* bin = C.getFrame("bin");
     rai::Frame* bin2 = C2.getFrame("bin");
     arr box_q = C.getFrame("box")->getQuaternion();
@@ -210,7 +216,6 @@ void randomizeBin(rai::Configuration& C,rai::Configuration& C2, StringA& all_fra
     bin2->setQuaternion({q_bin.w, q_bin.x, q_bin.y, q_bin.z});    
     bin2->setPosition(xyz_bin);
 
-    qF += {xyz_bin(0), xyz_bin(1), xyz_bin(2)};
     double scale_bin = rnd.uni(0.9, 1.1);
     
     for (const auto& frame : all_frames){
@@ -259,7 +264,10 @@ Quaternion eulerToQuaternion(double roll, double pitch, double yaw) {
 /*----------------------------------------------------------------------------------------------------------------------*/
 bool RRT(rai::Configuration& C2, const arr& qF, arr& path, arr& contact_points, bool view, double rrt_extend_length) {
     arr q0 = C2.getJointState();
-    C2.view(false, "RRT");
+    std::cout << "Start State: " << q0 << " Final State: " << qF << std::endl;
+    addMarker(C2, {q0(0), q0(1), q0(2)}, "cp0", "world", 0.2, false, {q0(3), q0(4), q0(5), q0(6)});
+    addMarker(C2, {qF(0), qF(1), qF(2)}, "cp", "world", 0.2, false, {qF(3), qF(4), qF(5), qF(6)});
+    C2.view(true, "RRT");
     auto problem = std::make_shared<ConfigurationProblem>(C2, true, 1e-3, 0);
     auto collisionPairs = rai::getParameter<StringA>("collisionPairs", {});
     auto coll = C2.getCollidablePairs();
@@ -335,7 +343,7 @@ bool RRT(rai::Configuration& C2, const arr& qF, arr& path, arr& contact_points, 
         cp.append(1);
         contact_points.append(cp);
         if(view) {
-            C2.view(true);
+            C2.view(false);
             rai::wait(0.1);
         }
     }

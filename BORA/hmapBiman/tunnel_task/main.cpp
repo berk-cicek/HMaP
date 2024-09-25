@@ -9,10 +9,10 @@ int main(int argc, char* argv[]) {
 
     // Initialize Configuration and BotOp
     rai::Configuration C;
-    C.addFile("HMAP_tunnel_conf.g");  
+    C.addFile("../../HMAP/config/tunnel/HMAP_tunnel_conf.g");  
 
     rai::Configuration C2;
-    C2.addFile("HMAP_tunnel_actuated_conf.g");  
+    C2.addFile("../../HMAP/config/tunnel/HMAP_tunnel_actuated_conf.g");  
     
     C.view(true, "Initial Configuration");
 
@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     std::string video_path = "video/config";
     int total_obstacle_count = 0;
     int waypoint_factor = 2;
-    arr qF = {0.5, 0.31, 0.09001, 1, 0, 0, 0};
+    arr qF = {0.5, 0.25, 0.09001, 1, 0, 0, 0};
     C2.setJointState(C.getFrame("box")->getPose());
 
     HMAPBiman hmap_biman(C, C2, qF, {}, target, total_obstacle_count, tool_list, gripper_list, filter, video_path, waypoint_factor, true);
