@@ -29,6 +29,6 @@ int main(int argc, char* argv[]) {
 
     HMAPBiman hmap_biman(C, C2, qF, q_obs, target, total_obstacle_count, tool_list, gripper_list, filter, video_path, waypoint_factor, true);
     hmap_biman.run();
-
+    hmap_biman.displaySolution();
     return 0;
 }

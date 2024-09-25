@@ -29,6 +29,8 @@ HMAPBiman::HMAPBiman(rai::Configuration C, rai::Configuration C2, arr qF, arr q_
     this->video_path = video_path;
     this->fail_limit = 10;
     this->waypoint_factor = waypoint_factor;
+    this->state_all = {};
+    this->state_count = 0;
     if(tool_list.empty()) {
         this->is_tool_aval = false;
     } else {
@@ -43,6 +45,11 @@ bool HMAPBiman::run(){
 
     addMarker(C, C.getFrame("l_l_gripper")->getPosition(), "l_gripper_home", "world", 0.01, false);
     addMarker(C, C.getFrame("r_l_gripper")->getPosition(), "r_gripper_home", "world", 0.01, false);
+
+    addMarker(C, {0,0,0}, "waypoint", "world", 0.1,  false);
+    addMarker(C, {0,0,0}, "candidate_point" , "world", 0.001, false);
+    addMarker(C, {0,0,0}, "contact_point", "world", 0.1, false); 
+
     calib = calibSkeleton(C);
     cout << "Calibration: " << calib << endl;
     cout << "Threshold: " << threshold << endl;
@@ -313,8 +320,8 @@ arr HMAPBiman::getCameraView(rai::Configuration& C, const std::string& cam_name,
         // Get the point cloud from the depth data and transform the points to the camera frame 
         depthData2pointCloud(pts, depth_masked, sensor.getFxycxy());
 
-        std::string frameName = "points_" + std::to_string(c);
-        rai::Frame* pts_frame = C.addFrame(frameName.c_str(), ("cam_frame_" + std::to_string(cam_frame_count)).c_str());
+        //std::string frameName = "points_" + std::to_string(c);
+        //rai::Frame* pts_frame = C.addFrame(frameName.c_str(), ("cam_frame_" + std::to_string(cam_frame_count)).c_str());
 
 
         std::random_device rd;
@@ -419,10 +426,10 @@ const std::string HMAPBiman::generateContactPoint(rai::Configuration& C, const s
         }
 
         // Add the candidate contact point to the configuration
-        addMarker(C, c_pts, "candidate_point_" + std::to_string(f1) , target, 0.001, false);
+        addMarker(C, c_pts, "candidate_point" , target, 0.001, false);
 
-        std::shared_ptr<SolverReturn> ret_l = moveSkeleton(C, "l_l_gripper", target, "candidate_point_" + std::to_string(f1), waypoint.c_str(), true);
-        std::shared_ptr<SolverReturn> ret_r = moveSkeleton(C, "r_l_gripper", target, "candidate_point_" + std::to_string(f1), waypoint.c_str(), true);
+        std::shared_ptr<SolverReturn> ret_l = moveSkeleton(C, "l_l_gripper", target, "candidate_point", waypoint.c_str(), true);
+        std::shared_ptr<SolverReturn> ret_r = moveSkeleton(C, "r_l_gripper", target, "candidate_point", waypoint.c_str(), true);
 
         sos_l_arr.append(ret_l->eq - calib);
         sos_r_arr.append(ret_r->eq - calib);
@@ -444,7 +451,7 @@ const std::string HMAPBiman::generateContactPoint(rai::Configuration& C, const s
     if(min(sos_l_arr) < min(sos_r_arr)) {
         cout << "The left gripper is closer to the object: " << min(sos_l_arr) << endl;
         pt_idx = argmin(sos_l_arr);
-        contact_point =  "contact_point_" + std::to_string(f2);
+        contact_point =  "contact_point";
         addMarker(C, candidateContactPoint(C, pts, pt_idx), contact_point, target, 0.1, false);
         f2++;
         return "l_l_gripper";
@@ -452,7 +459,7 @@ const std::string HMAPBiman::generateContactPoint(rai::Configuration& C, const s
     } else if(min(sos_r_arr) < min(sos_l_arr)) {
         cout << "The right gripper is closer to the object: " << min(sos_r_arr) << endl;
         pt_idx = argmin(sos_r_arr);
-        contact_point =  "contact_point_" + std::to_string(f2);
+        contact_point =  "contact_point";
         addMarker(C, candidateContactPoint(C, pts, pt_idx), contact_point, target, 0.1, false);
         f2++;
         return "r_l_gripper";
@@ -501,7 +508,11 @@ std::shared_ptr<SolverReturn> HMAPBiman::homeSkeleton(rai::Configuration& C, con
 
     img_count++;
     arr state = komo_path->pathConfig.getFrameState();
+
+    state_all.push_back(komo_path);
+    state_count ++;
     double frame_count = komo_path->pathConfig.getFrameNames().d1;
+   
     state = state.rows(state.d0-frame_count,state.d0);
     C.setFrameState(state);
 
@@ -542,7 +553,10 @@ std::shared_ptr<SolverReturn> HMAPBiman::moveSkeleton(rai::Configuration& C, con
             }
 
             arr state = komo_path->pathConfig.getFrameState();
+            state_all.push_back(komo_path);
+            state_count++;
             double frame_count = komo_path->pathConfig.getFrameNames().d1;
+            cout << "State Count: " << state.d0 << " " << state.d1 << endl;
             state = state.rows(state.d0-frame_count,state.d0);
             C.setFrameState(state);
             if(view)
@@ -583,6 +597,8 @@ double HMAPBiman::toolSkeleton(rai::Configuration& C, const std::string& tool, c
             img_count++;
         }
         arr state = komo_path->pathConfig.getFrameState();
+        state_all.push_back(komo_path);
+        state_count++;
         double frame_count = komo_path->pathConfig.getFrameNames().d1;
         state = state.rows(state.d0-frame_count,state.d0);
         C.setFrameState(state);
@@ -657,6 +673,8 @@ void HMAPBiman::homeTool(rai::Configuration& C, const std::string& gripper, cons
     }
 
     arr state = komo_path->pathConfig.getFrameState();
+    state_all.push_back(komo_path);
+    state_count++;
     double frame_count = komo_path->pathConfig.getFrameNames().d1;
     state = state.rows(state.d0-frame_count,state.d0);
     C.setFrameState(state);
@@ -671,5 +689,18 @@ std::string HMAPBiman::useTool(rai::Configuration& C, const arr path_point, cons
     toolSelection(C, waypoint, target, gripper_tool, tool);
     toolSkeleton(C, tool, target, gripper_tool, waypoint);
     return tool;
+}
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------------------------------------------------*/
+void HMAPBiman::displaySolution(){
+    std::shared_ptr<KOMO> komo_path;
+    for(uint i = 0; i < state_count; i++){
+        komo_path = state_all[i];
+        komo_path->pathConfig.viewer("path", true)->raiseWindow();
+        komo_path->view_play(false, 0.1);
+        komo_path->view_close();
+        cout << i << "/" << state_count << endl;
+    }
+    return;
 }
 

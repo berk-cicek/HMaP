@@ -34,6 +34,7 @@ public:
     bool run();
     arr getContactPoints();
     arr getPath();
+    void displaySolution();
 private:
     struct Quaternion {
         double w, x, y, z;
@@ -61,12 +62,18 @@ private:
     double calib;
     double threshold;
     double filter;
+    int state_all_d0;
+    int state_all_d1;
+    int state_all_d2;
+    int f_count;
+    int state_count;
     std::string tool;
     std::string target;
     std::string contact_point; 
     std::string video_path;
     std::vector<std::string> tool_list;
     std::vector<std::string> gripper_list;
+    std::vector<std::shared_ptr<KOMO>> state_all;
     
     rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {});
     bool RRT(rai::Configuration& C2, arr& path, bool view = true, double rrt_extend_length = 0.04);
