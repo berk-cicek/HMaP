@@ -9,10 +9,10 @@ int main(int argc, char* argv[]) {
 
     // Initialize Configuration and BotOp
     rai::Configuration C;
-    C.addFile("../../HMAP/config/tunnel_tool/HMAP_tunnel_tool_conf.g");  
+    C.addFile("../../src/config/tunnel_tool/HMAP_tunnel_tool_conf.g");  
 
     rai::Configuration C2;
-    C2.addFile("../../HMAP/config/tunnel_tool/HMAP_tunnel_tool_actuated_conf.g");  
+    C2.addFile("../../src/config/tunnel_tool/HMAP_tunnel_tool_actuated_conf.g");  
     
     C.view(true, "Initial Configuration");
 
