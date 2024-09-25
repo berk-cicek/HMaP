@@ -1,3 +1,0 @@
-set style data lines
-set title '(Gui/plot.h -> gnuplot pipe)'
-load 'z.komoReport.plt'
