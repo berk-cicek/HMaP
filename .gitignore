@@ -4,3 +4,4 @@ video/
 z.*
 .vscode/
 *.exe
+.idea/
