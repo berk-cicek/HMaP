@@ -9,10 +9,10 @@ int main(int argc, char* argv[]) {
 
     // Initialize Configuration and BotOp
     rai::Configuration C;
-    C.addFile("../../src/config/bookshelf/HMAP_bookshelf_conf.g");  
+    C.addFile("../../HMAP/config/bookshelf/HMAP_bookshelf_conf.g");  
 
     rai::Configuration C2;
-    C2.addFile("../../src/config/bookshelf/HMAP_bookshelf_actuated_conf.g");  
+    C2.addFile("../../HMAP/config/bookshelf/HMAP_bookshelf_actuated_conf.g");  
     
     C.view(true, "Initial Configuration");
 
