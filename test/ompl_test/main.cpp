@@ -27,8 +27,8 @@ int main(int argc, char** argv) {
     // Step 2: Define start and goal configurations using RAI
     arr q_start = C.getJointState();  // Get current joint state as start
     arr q_goal = q_start;             // Define a goal state (e.g., move a joint)
-    q_goal(0) += 0.5;
-    q_goal(1) += 0.5;  // Modify joint 0 for demonstration
+    q_goal(0) += 1.5;
+    q_goal(1) += 0;  // Modify joint 0 for demonstration
 
     // Step 3: Define the OMPL state space matching RAI's configuration space
     unsigned int space_dim = q_start.N;

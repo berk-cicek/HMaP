@@ -11,8 +11,7 @@ SRCS = main.cpp \
        $(BASE)/src/KOMO/manipTools.cpp \
        $(BASE)/src/Algo/SplineCtrlFeed.cpp \
        $(BASE)/src/Control/timingOpt.cpp \
-       $(BASE3)/HMAPBiman.cpp \
-       $(BASE3)/ompl_test.cpp
+       $(BASE3)/HMAPBiman.cpp
 
 # Object files from source files
 OBJS = $(SRCS:.cpp=.o)
