@@ -76,7 +76,7 @@ private:
     std::vector<std::shared_ptr<KOMO>> state_all;
     
     rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {});
-    bool RRT(rai::Configuration& C2, arr& path, bool view = true, double rrt_extend_length = 0.04);
+    bool RRT(rai::Configuration& C2, arr& path, bool view = true);
     arr getCameraView(rai::Configuration& C, const std::string& cam_name, const std::string& target, const double filter = 0.5);
     arr candidateContactPoint(rai::Configuration& C, const arr& pts, const int iter, bool isTransform = true);
     const std::string generateContactPoint(rai::Configuration& C, const std::string& target, const std::string& waypoint, std::string& contact_point);
@@ -87,6 +87,7 @@ private:
     void toolSelection(rai::Configuration& C, const std::string waypoint, const std::string target, std::string& gripper_out, std::string& tool_out);
     void homeTool(rai::Configuration& C, const std::string& gripper, const std::string& tool);
     std::string useTool(rai::Configuration& C, const arr path_point, const std::string waypoint, const std::string target);
+    void completeSkeleton(rai::Configuration& C, std::vector<std::string> gripper_list, std::vector<std::string> target_list, std::vector<std::string> waypoint_list, std::vector<std::string> contact_point_list, int count);
 };
 
 #endif

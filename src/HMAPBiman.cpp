@@ -39,16 +39,15 @@ HMAPBiman::HMAPBiman(rai::Configuration C, rai::Configuration C2, arr qF, arr q_
 }
 
 bool HMAPBiman::run(){
+    rai::Configuration C_base;
+    C_base = C;
+
     if(view) C.view(true, "Initial Configuration");
     if(!tool_list.empty())
     addMarker(C, C.getFrame("stick")->getPosition(), "stick_home", "world", 0.01, false);
 
     addMarker(C, C.getFrame("l_l_gripper")->getPosition(), "l_gripper_home", "world", 0.01, false);
     addMarker(C, C.getFrame("r_l_gripper")->getPosition(), "r_gripper_home", "world", 0.01, false);
-
-    addMarker(C, {0,0,0}, "waypoint", "world", 0.1,  false);
-    addMarker(C, {0,0,0}, "candidate_point" , "world", 0.001, false);
-    addMarker(C, {0,0,0}, "contact_point", "world", 0.1, false); 
 
     calib = calibSkeleton(C);
     cout << "Calibration: " << calib << endl;
@@ -68,8 +67,8 @@ bool HMAPBiman::run(){
             obstacle_count++;
         }
         
-        
     } while (!is_path_aval && (obstacle_count <= total_obstacle_count) && total_obstacle_count != 0);
+
     obstacle_count--;
 
     if(!is_path_aval) {
@@ -90,20 +89,31 @@ bool HMAPBiman::run(){
         }
     }
 
+    std::vector<std::string> gripper_list;
+    std::vector<std::string> target_list;
+    std::vector<std::string> waypoint_list;
+    std::vector<std::string> contact_point_list;
+    std::string waypoint = "waypoint_" + std::to_string(idx);
+    std::string cp = "contact_point_" + std::to_string(idx);
+
     // Check if there is enough clearance to reach the object
-    addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, "waypoint", "world", 0.1, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
-    std::string gripper = generateContactPoint(C, target, "waypoint", contact_point);
+    addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.1, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
+    addMarker(C_base, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.1, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
+
+    std::string gripper = generateContactPoint(C, target, waypoint, contact_point);
+    addMarker(C_base, C.getFrame("contact_point")->getPosition(), cp, target, 0.1, false);
     while(gripper == "" && is_tool_aval) {
         cout << "Object is not reachable" << endl;
-        tool = useTool(C, path[idx], "waypoint", target);
-        gripper = generateContactPoint(C, target, "waypoint", contact_point);
+        tool = useTool(C, path[idx], waypoint, target);
+        gripper = generateContactPoint(C, target, waypoint, contact_point);
         contact_points.append(C.getFrame("contact_point")->getPosition());
         idx++;
     }
 
     // Now move the robot along the path
     while(idx < path.d0){
-    
+        waypoint = "waypoint_" + std::to_string(idx);
+        //addMarker(C, C.getFrame("contact_point")->getPosition(), cp, target, 0.1, false);
         // If the ideal gripper has tool at hand make it place it
         if(gripper == "l_l_gripper" && !is_aval_l) {
             homeTool(C, gripper, tool);
@@ -112,12 +122,14 @@ bool HMAPBiman::run(){
         }
 
         cout << "Next waypoint: " << path(idx, 0) << " " << path(idx, 1) << " " << path(idx, 2) << endl;
-        addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, "waypoint", "world", 0.1, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
+        addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.001, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
+        addMarker(C_base, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.001, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
+
         if(view)
         C.view(false, "Waypoint");
         
         if(gripper != ""){
-            is_feas = moveSkeleton(C, gripper, target, contact_point, "waypoint")->eq - calib <= threshold;
+            is_feas = moveSkeleton(C, gripper, target, contact_point, waypoint)->eq - calib <= threshold;
         } else {
             is_feas = false;
         }
@@ -126,14 +138,21 @@ bool HMAPBiman::run(){
         
         // If the path is not feasible, use the tool to reach the object, if the tool is not available, calibrate the robot as a workaround 
         if(!is_feas) {
+            
             if(is_tool_aval) {
-                tool = useTool(C, path[idx], "waypoint", target);
+                tool = useTool(C, path[idx], waypoint, target);
             } else {
                 homeSkeleton(C, "l_l_gripper", "r_l_gripper", "l_gripper_home", "r_gripper_home");
                 calib = calibSkeleton(C);
             }
-            gripper = generateContactPoint(C, target, "waypoint", contact_point);
+            gripper = generateContactPoint(C, target, waypoint, contact_point);
+            cp = "contact_point_" + std::to_string(idx);
+            addMarker(C_base, C.getFrame("contact_point")->getPosition(), cp, target, 0.1, false);
         } else {
+            gripper_list.push_back(gripper);
+            target_list.push_back(target);
+            waypoint_list.push_back(waypoint);
+            contact_point_list.push_back(cp);
             idx ++;
         }
         if(gripper != "") {
@@ -141,8 +160,127 @@ bool HMAPBiman::run(){
         }
     }
     cout << "The HMAP is completed."<< endl;
+    completeSkeleton(C_base, gripper_list, target_list, waypoint_list, contact_point_list, idx);
     return 1;
 }
+/*----------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------------------------------------------------*/
+void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string> gripper_list, std::vector<std::string> target_list, std::vector<std::string> waypoint_list, std::vector<std::string> contact_point_list, int count) {
+    C.view(true, "Last");
+    cout << "Optimizing as a whole" << endl;
+    rai::Skeleton S;
+    S.collisions = rai::getParameter<bool>("collisions", true);
+    S.verbose = -1;    
+    double multiplier = 0.2;
+    double s1 = 0.7;
+    double s2 = 1;
+    double s3 = 1.3;
+    double s4 = 1.6;
+
+    std::shared_ptr<KOMO> komo_path;
+    std::string gripper = "";
+    std::string target = "";
+    std::string waypoint = "";
+
+    //S.addExplicitCollisions({"box", "tunnel_top", "tunnel_side", "tunnel_side2", "tunnel_top_2", "tunnel_side_2", "tunnel_side2_2"});
+    
+    double limit = 0;
+    int foo = 0;
+    arr limit_list = ones(gripper_list.size()) * -1;
+    arr cp_st = {};
+    std::string contact_foo = "";
+
+    for(uint i = 0; i < gripper_list.size(); i++){
+        cout << "Limit: " << limit << endl;
+        if(i == 0){
+            contact_foo = contact_point_list[i];
+            limit = s3 + multiplier;
+        }
+        else {
+            if(contact_foo == contact_point_list[i]){
+                limit += multiplier;
+            } else {
+                contact_foo = contact_point_list[i];
+                cout << "i: " << i << endl;
+                limit += multiplier;
+
+                for(uint j = foo; j < i; j++){
+                    limit_list(j) = limit;
+                }
+                limit += s3;
+                foo = i;
+            }
+        }
+    }
+
+    cout << "Limit List: " << limit_list << endl;
+    std::string contact_point = "";
+    std::string contact_point_prev = "";
+    double D = 0;
+
+    for(uint i = 0; i < count; i++){
+        gripper = gripper_list[i];
+        target  = target_list[i];
+        waypoint = waypoint_list[i];
+        contact_point = contact_point_list[i];
+        if(contact_point != contact_point_prev){
+            D += multiplier;
+            //if(contact_point_prev != "") 
+            S.addEntry({s1+D, limit_list(i)}, rai::SY_touch , {gripper.c_str(), contact_point.c_str()});
+            cout << "D: " << D+s1 << " Limit: " << limit_list(i) << " State: Change, Stable" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
+            S.addEntry({s2+D, limit_list(i)}, rai::SY_stable, {gripper.c_str(), target.c_str()});
+            cout << "D: " << D +s2 << " Limit: " << limit_list(i) << " State: Change, Touch" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
+            S.addEntry({s3+D, s3+D}, rai::SY_poseEq, {target.c_str(), waypoint.c_str()});
+            cout << "D: " << D +s3<< " Limit: " << limit_list(i) << " State: Change, PoseEq" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
+            D += s3;
+            cp_st.append(D);
+        } else {
+            D += multiplier;
+            S.addEntry({D, D}, rai::SY_poseEq, {target.c_str(), waypoint.c_str()});
+            cp_st.append(D);
+            cout << "D: " << D << " Limit: " << limit_list(i) << " State: Move" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
+        }
+        contact_point_prev = contact_point;
+    }
+    cout << "CP list: " << cp_st << endl;
+    D = 0;
+    komo_path = S.getKomo_path(C, 2*count, 1e0, 1e-2, 1e-3, 1e2);
+    contact_point_prev = "";
+    for(uint i = 0; i < count; i++){
+        target = gripper_list[i];
+        gripper = gripper_list[i];
+        contact_point = contact_point_list[i];
+        if(contact_point_prev != contact_point){
+            if(contact_point_prev == ""){
+                komo_path->addModeSwitch({cp_st(i), limit_list(i)}, rai::SY_quasiStaticOn, {"table", "box"}, true);
+            } else {
+                komo_path->addModeSwitch({cp_st(i), limit_list(i)}, rai::SY_quasiStaticOn, {"table", "box"}, false);
+            }
+            komo_path->addObjective({cp_st(i), limit_list(i)}, FS_positionDiff, {gripper.c_str(), contact_point.c_str()}, OT_sos, {1e2});
+            cout << "D: " << cp_st(i) << " Limit: " << limit_list(i) << " State: CP" << " Gripper: " << gripper << " Contact: " << contact_point  << endl;
+        }
+        contact_point_prev = contact_point;
+    }
+    ////komo_path->addObjective({}, FS_accumulatedCollisions, {}, OT_sos, {1e2});
+
+    NLP_Solver sol;
+    sol.opt.verbose = -1;
+    sol.setProblem(komo_path->nlp());
+    auto ret = sol.solve();
+    cout << "Move Cost: " <<ret->eq<< endl;
+    C.view(true, "Optimized");
+    cout <<komo_path->report(true, true, true) <<endl;
+    komo_path->pathConfig.viewer()->raiseWindow();
+    komo_path->view_play(true, 0.2);
+    arr state = komo_path->pathConfig.getFrameState();
+    double frame_count = komo_path->pathConfig.getFrameNames().d1;
+    cout << "State Count: " << state.d0 << " " << state.d1 << endl;
+    state = state.rows(state.d0-frame_count,state.d0);
+    C.setFrameState(state);
+    C.view(true, "Move Skeleton");
+
+}
+
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------*/
 arr HMAPBiman::getContactPoints(){
@@ -172,7 +310,7 @@ rai::Frame& HMAPBiman::addMarker(rai::Configuration& C, const arr pos, const std
 }
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------*/
-bool HMAPBiman::RRT(rai::Configuration& C2, arr& path, bool view, double rrt_extend_length) {
+bool HMAPBiman::RRT(rai::Configuration& C2, arr& path, bool view) {
     arr q0 =  C2.getJointState();
     std::cout << "Start State: " << q0 << " Final State: " << qF << std::endl;
     addMarker(C2, {q0(0), q0(1), q0(2)}, "cp0", "world", 0.2, false, {q0(3), q0(4), q0(5), q0(6)});
@@ -197,7 +335,7 @@ bool HMAPBiman::RRT(rai::Configuration& C2, arr& path, bool view, double rrt_ext
         rrt.verbose = -1;
         bool isFeas = false;
         auto ret = std::make_shared<SolverReturn>();
-        for (int i = 0; i < 10 && !isFeas; ++i) {
+        for (int i = 0; i < 30 && !isFeas; ++i) {
             cout << "RRT Iteration: " << i << endl;
             //rrt = std::make_shared<RRT_PathFinder>(*problem, q0, qF, rrt_extend_length);
             RRT_PathFinder rrt2(*problem, q0, qF);
@@ -242,7 +380,7 @@ bool HMAPBiman::RRT(rai::Configuration& C2, arr& path, bool view, double rrt_ext
     path = komo2.getPath_qOrg();
 
     arr newPath;
-    int factor = 3;  // Set the interpolation factor (number of intervals between points)
+    int factor = waypoint_factor;  // Set the interpolation factor (number of intervals between points)
     for (uint i = 0; i < path.d0 - 1; ++i) {
         newPath.append(path[i]);
         for (int j = 1; j < factor; ++j) {
@@ -250,7 +388,7 @@ bool HMAPBiman::RRT(rai::Configuration& C2, arr& path, bool view, double rrt_ext
         }
     }
 
-newPath.append(path[path.d0 - 1]);  // Append the last point
+    newPath.append(path[path.d0 - 1]);  // Append the last point
     newPath.resize(newPath.d0/path.d1, path.d1);
     for (uint i = 0; i < newPath.d0; ++i) {
         C2.setJointState(newPath[i]);  // Use path[i] to access the i-th configuration in the path
@@ -320,8 +458,8 @@ arr HMAPBiman::getCameraView(rai::Configuration& C, const std::string& cam_name,
         // Get the point cloud from the depth data and transform the points to the camera frame 
         depthData2pointCloud(pts, depth_masked, sensor.getFxycxy());
 
-        //std::string frameName = "points_" + std::to_string(c);
-        //rai::Frame* pts_frame = C.addFrame(frameName.c_str(), ("cam_frame_" + std::to_string(cam_frame_count)).c_str());
+        std::string frameName = "points_" + std::to_string(c);
+        rai::Frame* pts_frame = C.addFrame(frameName.c_str(), ("cam_frame_" + std::to_string(cam_frame_count)).c_str());
 
 
         std::random_device rd;
@@ -360,7 +498,9 @@ arr HMAPBiman::getCameraView(rai::Configuration& C, const std::string& cam_name,
                 is_empty = true;
             } else {
                 //pts_frame->setPointCloud(pts_filtered);
-                ////C.view(true, "Point cloud");
+                //cout << pts_frame->getPosition() << endl;
+                //addMarker(C, candidateContactPoint(C, pts_filtered, 2, true), "contact_pointads", "box", 0.1, false);
+                //C.view(true, "Point cloud");
                 is_empty = false;
             }
 
@@ -408,64 +548,108 @@ const std::string HMAPBiman::generateContactPoint(rai::Configuration& C, const s
     arr sos_l_arr;
     arr sos_r_arr;
     int iter = 0;
-    int max_iter = pts.d0;
+    int max_iter;
     arr contactPoints;
     int fail_count = 0;
-    do {
-        cout << "Iteration: " << iter << " / " << max_iter << endl;
-        // Get the candidate contact point
-        arr c_pts = candidateContactPoint(C, pts, iter);
+    int heuristic = 0;
+    if(heuristic == 0){
+        max_iter = 40;
+        for(iter = 0; iter < max_iter; iter++){
 
-        if(c_pts.N == 0) {
-            C.setJointState(qHome);
-            c_pts = candidateContactPoint(C, pts, iter);
+            cout << "Iteration: " << iter << " / " << max_iter << endl;
+            if(pts.d0 == 0) return "";
+
+            double pt_idx = rnd.num(0, pts.d0 - 1);
+
+            arr c_pts = candidateContactPoint(C, pts, pt_idx, true);
             if(c_pts.N == 0) {
                 cout << "No candidate contact point found" << endl;
-                return "";
+                return "";   
             }
+
+            addMarker(C, c_pts, "candidate_point" , target, 0.0001, false);
+
+            std::shared_ptr<SolverReturn> ret_l = moveSkeleton(C, "l_l_gripper", target, "candidate_point", waypoint.c_str(), true);
+            std::shared_ptr<SolverReturn> ret_r = moveSkeleton(C, "r_l_gripper", target, "candidate_point", waypoint.c_str(), true);
+
+            double l_cost = ret_l->eq - calib;
+            double r_cost = ret_r->eq - calib;
+
+            if(l_cost < threshold && l_cost < r_cost) {
+                cout << "The left gripper is closer to the object: " << l_cost << endl;
+                contact_point =  "contact_point";
+                addMarker(C, c_pts, contact_point, target, 0.1, false);
+                C.view(false);
+                return "l_l_gripper";
+            } else if(r_cost < threshold && r_cost < l_cost) {
+                cout << "The right gripper is closer to the object: " << r_cost << endl;
+                contact_point =  "contact_point";
+                addMarker(C, c_pts, contact_point, target, 0.1, false);
+                C.view(false);
+                return "r_l_gripper";
+            } 
+
         }
-
-        // Add the candidate contact point to the configuration
-        addMarker(C, c_pts, "candidate_point" , target, 0.001, false);
-
-        std::shared_ptr<SolverReturn> ret_l = moveSkeleton(C, "l_l_gripper", target, "candidate_point", waypoint.c_str(), true);
-        std::shared_ptr<SolverReturn> ret_r = moveSkeleton(C, "r_l_gripper", target, "candidate_point", waypoint.c_str(), true);
-
-        sos_l_arr.append(ret_l->eq - calib);
-        sos_r_arr.append(ret_r->eq - calib);
-        
-        if((ret_l->eq - calib) > threshold && (ret_r->eq - calib) > threshold) {
-            fail_count++;
-        } else {
-            fail_count = 0;
-        }
-    
-        iter++;
-        f1 ++;
-    } while( iter < max_iter && fail_count < fail_limit);
-
-    sos_l_arr.append(INT_MAX);
-    sos_r_arr.append(INT_MAX);
-    double pt_idx;
-
-    if(min(sos_l_arr) < min(sos_r_arr)) {
-        cout << "The left gripper is closer to the object: " << min(sos_l_arr) << endl;
-        pt_idx = argmin(sos_l_arr);
-        contact_point =  "contact_point";
-        addMarker(C, candidateContactPoint(C, pts, pt_idx), contact_point, target, 0.1, false);
-        f2++;
-        return "l_l_gripper";
-        
-    } else if(min(sos_r_arr) < min(sos_l_arr)) {
-        cout << "The right gripper is closer to the object: " << min(sos_r_arr) << endl;
-        pt_idx = argmin(sos_r_arr);
-        contact_point =  "contact_point";
-        addMarker(C, candidateContactPoint(C, pts, pt_idx), contact_point, target, 0.1, false);
-        f2++;
-        return "r_l_gripper";
-    } else {
-        cout << "No gripper is closer to the object" << endl;
         return "";
+
+    } else {
+        do {
+            max_iter = pts.d0;
+            cout << "Iteration: " << iter << " / " << max_iter << endl;
+            // Get the candidate contact point
+            arr c_pts = candidateContactPoint(C, pts, iter);
+
+            if(c_pts.N == 0) {
+                C.setJointState(qHome);
+                c_pts = candidateContactPoint(C, pts, iter);
+                if(c_pts.N == 0) {
+                    cout << "No candidate contact point found" << endl;
+                    return "";
+                }
+            }
+
+            // Add the candidate contact point to the configuration
+            addMarker(C, c_pts, "candidate_point" , target, 0.001, false);
+
+            std::shared_ptr<SolverReturn> ret_l = moveSkeleton(C, "l_l_gripper", target, "candidate_point", waypoint.c_str(), true);
+            std::shared_ptr<SolverReturn> ret_r = moveSkeleton(C, "r_l_gripper", target, "candidate_point", waypoint.c_str(), true);
+
+            sos_l_arr.append(ret_l->eq - calib);
+            sos_r_arr.append(ret_r->eq - calib);
+            
+            if((ret_l->eq - calib) > threshold && (ret_r->eq - calib) > threshold) {
+                fail_count++;
+            } else {
+                fail_count = 0;
+            }
+        
+            iter++;
+            f1 ++;
+        } while( iter < max_iter && fail_count < fail_limit);
+
+        sos_l_arr.append(INT_MAX);
+        sos_r_arr.append(INT_MAX);
+        double pt_idx;
+
+        if(min(sos_l_arr) < min(sos_r_arr)) {
+            cout << "The left gripper is closer to the object: " << min(sos_l_arr) << endl;
+            pt_idx = argmin(sos_l_arr);
+            contact_point =  "contact_point";
+            addMarker(C, candidateContactPoint(C, pts, pt_idx), contact_point, target, 0.1, false);
+            f2++;
+            return "l_l_gripper";
+            
+        } else if(min(sos_r_arr) < min(sos_l_arr)) {
+            cout << "The right gripper is closer to the object: " << min(sos_r_arr) << endl;
+            pt_idx = argmin(sos_r_arr);
+            contact_point =  "contact_point";
+            addMarker(C, candidateContactPoint(C, pts, pt_idx), contact_point, target, 0.1, false);
+            f2++;
+            return "r_l_gripper";
+        } else {
+            cout << "No gripper is closer to the object" << endl;
+            return "";
+        }
     }
 }
 /*----------------------------------------------------------------------------------------------------------------------*/
@@ -527,12 +711,13 @@ std::shared_ptr<SolverReturn> HMAPBiman::moveSkeleton(rai::Configuration& C, con
     S.verbose = -1;    
     std::shared_ptr<KOMO> komo_path;
 
+    
     S.addEntry({0.7, -1}, rai::SY_stable, {gripper.c_str(), target.c_str()});
     S.addEntry({1, -1}, rai::SY_touch, {gripper.c_str(), target.c_str()});
     S.addEntry({1.3, -1}, rai::SY_poseEq, {target.c_str(), waypoint.c_str()});
     komo_path = S.getKomo_path(C, 5, 1e-1, 1e-2, 1e-3, 1e2);
     
-    komo_path->addObjective({1.3, -1}, FS_positionDiff, {gripper.c_str(), contact_point.c_str()}, OT_sos, {1e2});
+    komo_path->addObjective({1.3, -1}, FS_positionDiff, {gripper.c_str(), contact_point.c_str()}, OT_sos, {1e1});
     //komo_path->addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e1});
     
     NLP_Solver sol;
@@ -560,7 +745,7 @@ std::shared_ptr<SolverReturn> HMAPBiman::moveSkeleton(rai::Configuration& C, con
             state = state.rows(state.d0-frame_count,state.d0);
             C.setFrameState(state);
             if(view)
-            C.view(true, "Move Skeleton");
+            C.view(false, "Move Skeleton");
             if(gripper == "r_l_gripper" && !is_aval_r) is_aval_r = true;
             else if(gripper == "l_l_gripper" && !is_aval_l) is_aval_l = true;
         } 
