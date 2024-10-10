@@ -27,6 +27,9 @@
 #include <opencv2/opencv.hpp>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <iostream>
+#include <future>
+#include <memory>
 
 class HMAPBiman {
 public:
@@ -34,18 +37,28 @@ public:
     bool run();
     arr getContactPoints();
     arr getPath();
+    std::vector<rai::Configuration> getCs();
     void displaySolution();
+    bool RRT_test(rai::Configuration C2, arr& qF, int waypoint_factor, arr& path, bool view = true);
+    void setPath(arr path, bool is_blocked);
+    void setC(rai::Configuration C);
+    void setC2(rai::Configuration C2);
+
+    bool is_save_C;
+
 private:
     struct Quaternion {
         double w, x, y, z;
     };
     rai::Configuration C;
     rai::Configuration C2;
+    rai::Configuration C_copy;
     arr qHome;
     arr qF;
     arr q_obs;
     arr path;
     arr contact_points;
+    bool is_path_given;
     bool is_tool_aval;
     bool is_aval_l;
     bool is_aval_r;
@@ -74,6 +87,7 @@ private:
     std::vector<std::string> tool_list;
     std::vector<std::string> gripper_list;
     std::vector<std::shared_ptr<KOMO>> state_all;
+    std::vector<rai::Configuration> Cs;
     
     rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {});
     bool RRT(rai::Configuration& C2, arr& path, bool view = true);
@@ -83,11 +97,14 @@ private:
     double calibSkeleton(rai::Configuration& C);
     std::shared_ptr<SolverReturn> homeSkeleton(rai::Configuration& C, const std::string& l_gripper, const std::string& r_gripper, const std::string& l_gripper_home, const std::string& r_gripper_home);
     std::shared_ptr<SolverReturn> moveSkeleton(rai::Configuration& C, const std::string& gripper, const std::string& target, const std::string& contact_point, const std::string& waypoint, const bool isTrial=false);
+    std::shared_ptr<SolverReturn> moveSkeletonWithTimeout(rai::Configuration& C, const std::string& gripper, const std::string& target, const std::string& candidate_point, const std::string& waypoint, bool flag, int timeout_seconds);
     double toolSkeleton(rai::Configuration& C, const std::string& tool, const std::string& target, const std::string& gripper, const std::string& final_pose, const bool isTrial = false);
     void toolSelection(rai::Configuration& C, const std::string waypoint, const std::string target, std::string& gripper_out, std::string& tool_out);
     void homeTool(rai::Configuration& C, const std::string& gripper, const std::string& tool);
     std::string useTool(rai::Configuration& C, const arr path_point, const std::string waypoint, const std::string target);
     void completeSkeleton(rai::Configuration& C, std::vector<std::string> gripper_list, std::vector<std::string> target_list, std::vector<std::string> waypoint_list, std::vector<std::string> contact_point_list, int count);
+    
+
 };
 
 #endif
