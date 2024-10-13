@@ -33,11 +33,11 @@
 
 class HMAPBiman {
 public:
-    HMAPBiman(rai::Configuration C, rai::Configuration C2, arr qF, arr q_obs, std::string target, int total_obstacle_count, std::vector<std::string> tool_list, std::vector<std::string> gripper_list, double filter, std::string video_path, int waypoint_factor, bool view);
+    HMAPBiman(rai::Configuration C, rai::Configuration C2, arr qF, arr q_obs, std::string target, std::string interacted_target, int total_obstacle_count, std::vector<std::string> tool_list, std::vector<std::string> gripper_list, double filter, std::string video_path, int waypoint_factor, bool view);
     bool run();
     arr getContactPoints();
     arr getPath();
-    std::vector<rai::Configuration> getCs();
+    std::vector<std::string> getCs();
     void displaySolution();
     bool RRT_test(rai::Configuration C2, arr& qF, int waypoint_factor, arr& path, bool view = true);
     void setPath(arr path, bool is_blocked);
@@ -60,13 +60,12 @@ private:
     arr contact_points;
     bool is_path_given;
     bool is_tool_aval;
-    bool is_aval_l;
-    bool is_aval_r;
     bool is_feas;
     bool is_path_aval;
     bool is_path_blocked;
     bool view;
     int idx;
+    int gripper_count;
     int obstacle_count;
     int total_obstacle_count;
     int img_count;
@@ -82,22 +81,24 @@ private:
     int state_count;
     std::string tool;
     std::string target;
+    std::string interacted_target;
     std::string contact_point; 
     std::string video_path;
     std::vector<std::string> tool_list;
     std::vector<std::string> gripper_list;
     std::vector<std::shared_ptr<KOMO>> state_all;
-    std::vector<rai::Configuration> Cs;
+    std::vector<bool> is_aval_list;
+    std::vector<std::string> Cs;
     
     rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {});
     bool RRT(rai::Configuration& C2, arr& path, bool view = true);
     arr getCameraView(rai::Configuration& C, const std::string& cam_name, const std::string& target, const double filter = 0.5);
     arr candidateContactPoint(rai::Configuration& C, const arr& pts, const int iter, bool isTransform = true);
-    const std::string generateContactPoint(rai::Configuration& C, const std::string& target, const std::string& waypoint, std::string& contact_point);
+    const std::string generateContactPoint(rai::Configuration& C, const std::string& target, const std::string& interacted_target, const std::string& waypoint, std::string& contact_point);
     double calibSkeleton(rai::Configuration& C);
-    std::shared_ptr<SolverReturn> homeSkeleton(rai::Configuration& C, const std::string& l_gripper, const std::string& r_gripper, const std::string& l_gripper_home, const std::string& r_gripper_home);
-    std::shared_ptr<SolverReturn> moveSkeleton(rai::Configuration& C, const std::string& gripper, const std::string& target, const std::string& contact_point, const std::string& waypoint, const bool isTrial=false);
-    std::shared_ptr<SolverReturn> moveSkeletonWithTimeout(rai::Configuration& C, const std::string& gripper, const std::string& target, const std::string& candidate_point, const std::string& waypoint, bool flag, int timeout_seconds);
+    std::shared_ptr<SolverReturn> homeSkeleton(rai::Configuration& C);
+    std::shared_ptr<SolverReturn> moveSkeleton(rai::Configuration& C, const std::string& gripper, const std::string& target, const std::string& interacted_target, const std::string& contact_point, const std::string& waypoint, const bool isTrial=false);
+    std::shared_ptr<SolverReturn> moveSkeletonWithTimeout(rai::Configuration& C, const std::string& gripper, const std::string& target, const std::string& interacted_target, const std::string& candidate_point, const std::string& waypoint, bool flag, int timeout_seconds, bool& is_timeout);
     double toolSkeleton(rai::Configuration& C, const std::string& tool, const std::string& target, const std::string& gripper, const std::string& final_pose, const bool isTrial = false);
     void toolSelection(rai::Configuration& C, const std::string waypoint, const std::string target, std::string& gripper_out, std::string& tool_out);
     void homeTool(rai::Configuration& C, const std::string& gripper, const std::string& tool);
