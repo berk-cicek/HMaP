@@ -14,11 +14,11 @@ tunnel_side2(tunnel): { rel: [-0.15, 0.31, 0.08, 1, 0, 0, 0], shape: box, size: 
 
 box (world){
   shape:ssBox, Q: "t(0 0 0) d(0 0 0 1)", size:[0.3 .04 .05 .04], color:[0 1 1], mass: .1, contact: 1,
-  joint:free, limits: [-10,10,-10,10,-10,10,-4,4,-4,4,-4,4,-4,4]
+  joint:free, limits: [-10,5,-10,10,-10,5,-4,4,-4,4,-4,4,-4,4]
 }
 
 stick(world): { rel: [0.34, 0.25, 0.09001, 0.707107, 0, 0, 0.707107], joint: rigid, shape: ssBox, size: [0.4, 0.08, 0.08, 0.04], color: [0, 1, 0], contact: 1, mass: 0.1, inertia: [0.000106667, 0.00138667, 0.00138667] },
-sphere(world): { rel: [0.5, 0.25, 0.1, 0.707107, 0, 0, 0.707107], joint: rigid, shape: box, size: [0.08, 0.08, 0.08, 0.04], color: [1, 0, 1], contact: 1, mass: 0.1, inertia: [0.000106667, 0.000106667, 0.000106667] },
+sphere(world): { rel: [0.5, 0.5, 0.1, 0.707107, 0, 0, 0.707107], joint: rigid, shape: box, size: [0.08, 0.08, 0.08, 0.04], color: [1, 0, 1], contact: 1, mass: 0.1, inertia: [0.000106667, 0.000106667, 0.000106667] },
 cube(world): { rel: [0.1, 0.5, 0.1, 0.707107, 0, 0, 0.707107], joint: rigid, shape: box, size: [0.08, 0.08, 0.08, 0.04], color: [0, 0, 1], contact: 1, mass: 0.1, inertia: [0.000106667, 0.000106667, 0.000106667] },
 
 contact_point(box){

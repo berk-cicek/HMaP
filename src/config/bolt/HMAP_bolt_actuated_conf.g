@@ -19,11 +19,11 @@ lock_2_top (lock):{ X:"t(0.1 0.25 0.208) d(0 0 0 1)" , shape:box, size: [0.2 0.1
 lock_2_side (lock):{ X:"t(0.1 0.15 0.12) d(0 0 0 1)" , shape:box, size: [0.2 0.03 0.14 0.5], color: [0.996 0.478 0.211], mass: .1,contact:-1}
 lock_2_side2 (lock):{ X:"t(0.1 0.35 0.12) d(0 0 0 1)" , shape:box, size: [0.2 0.03 0.14 0.5], color: [0.996 0.478 0.211], mass: .1,contact:-1}
 
-box (world){
-  X: "t(0 0 0) d(0 0 0 1)", shape:ssBox, size:[1.0 .02 .02 .04], color: [0.211, 0.321, 0.678], mass: .1, contact:1,
-  joint:free, limits: [-10, 10, -10, 10, -10, 10, -10, 10, -10, 10, -10, 10, -10, 10]
+box (head){
+  X: "t(0 -0.15 .0) d(0 0 0 1)", shape:ssBox,  size:[1.0 .1 .1 .04], color: [0.211 0.321 0.678], mass: .1, contact:1,
 }
 
-head (box){
-  shape:ssBox, Q: "t(-0.05 0.12 .00) d(0 0 0 1)", size:[.01 .3 .01 .02], color:[0 1 1], mass: .1, contact:1
+head (world){
+  X: "t(0 0 0) d(0 0 0 1)", shape:ssBox, size:[.02 .21 .01 .02], color:[0 1 1], mass: .1, contact:1,
+  joint:free, limits: [-10, 10, -10, 10, -10, 10, -10, 10, -10, 10, -10, 10, -10, 10]
 }
