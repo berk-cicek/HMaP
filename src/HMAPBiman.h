@@ -42,9 +42,7 @@ public:
     void setPath(arr path, bool is_blocked, int obstacle_count);
     void setC(rai::Configuration C);
     void setC2(rai::Configuration C2);
-    bool RRT(rai::Configuration C2, arr& path, bool view = true);
-    arr connectWaypoints(rai::Configuration C2, arr waypoints, bool view = true);
-    void completeSkeleton(rai::Configuration& C, std::vector<std::string> gripper_list, std::vector<std::string> target_list, std::vector<std::string> waypoint_list, std::vector<std::string> contact_point_list);
+    bool RRT(rai::Configuration C2, arr& path, arr goal, bool view = true);
     void set_dynamic_obs();
 
     bool is_save_C;
@@ -62,6 +60,9 @@ private:
     arr path;
     arr contact_points;
     arr dyn_obs_pos;
+    arr offline_cp_model;
+    arr states;
+    bool is_model_aval;
     bool is_dynamic;
     bool is_path_given;
     bool is_tool_aval;
@@ -95,10 +96,12 @@ private:
     std::vector<std::shared_ptr<KOMO>> state_all;
     std::vector<bool> is_aval_list;
     std::vector<std::string> Cs;
+    std::vector<rai::Configuration> C_views;
     
     rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {});
     arr getCameraView(rai::Configuration& C, const std::string& cam_name, const std::string& target, const double filter = 0.5);
     arr candidateContactPoint(rai::Configuration& C, const arr& pts, const int iter, bool isTransform = true);
+    const std::string findContactPoint(rai::Configuration& C, const std::string& target, const std::string& interacted_target, const std::string& waypoint);
     const std::string generateContactPoint(rai::Configuration& C, const std::string& target, const std::string& interacted_target, const std::string& waypoint);
     double calibSkeleton(rai::Configuration& C);
     std::shared_ptr<SolverReturn> homeSkeleton(rai::Configuration& C);
@@ -108,9 +111,10 @@ private:
     void toolSelection(rai::Configuration& C, const std::string waypoint, const std::string target, std::string& gripper_out, std::string& tool_out);
     void homeTool(rai::Configuration& C, const std::string& gripper, const std::string& tool);
     std::string useTool(rai::Configuration& C, const std::string waypoint, const std::string target);
+    arr adjust_waypoint(rai::Configuration C2, std::string target, std::string waypoint_adj);
+    arr connectWaypoints(rai::Configuration C2, arr waypoints, bool view = true);
+    bool generatePathPlan(arr& path_plan, arr goal);
     
-    
-
 };
 
 #endif
