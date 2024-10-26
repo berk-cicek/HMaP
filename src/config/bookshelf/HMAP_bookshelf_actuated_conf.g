@@ -33,3 +33,5 @@ box (world): { X:"t(0 0 0) d(0 0 0 1)" , shape:box, size: [0.06 0.20 0.20 0.5], 
 obstacle_0 (shelf): { X:"t(-0.05 -0.4 0.91) d(0 0 0 1)" , shape:box, size: [0.14 0.03 0.20 0.5], color: [1 1 0], mass: .1, contact:1,
   joint:rigid
 }
+
+

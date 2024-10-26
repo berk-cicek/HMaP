@@ -30,6 +30,8 @@
 #include <iostream>
 #include <future>
 #include <memory>
+#include <chrono>
+#include <filesystem>
 
 class HMAPBiman {
 public:
@@ -44,9 +46,11 @@ public:
     void setC2(rai::Configuration C2);
     bool RRT(rai::Configuration C2, arr& path, arr goal, bool view = true);
     void set_dynamic_obs();
-
+    void completeSkeleton(rai::Configuration& C, std::vector<std::string> robot_list, std::vector<std::string> target_list, std::vector<std::string> waypoint_list, std::vector<std::string> contact_point_list);
+    void load_model(std::string model_path);
+    
     bool is_save_C;
-
+    bool is_model_aval;
 private:
     struct Quaternion {
         double w, x, y, z;
@@ -62,7 +66,7 @@ private:
     arr dyn_obs_pos;
     arr offline_cp_model;
     arr states;
-    bool is_model_aval;
+    arr point_clouds;
     bool is_dynamic;
     bool is_path_given;
     bool is_tool_aval;
