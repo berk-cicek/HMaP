@@ -17,6 +17,9 @@ shelf_book_7(shelf): { rel: [0.07, -0.65, 0.615, 1, 0, 0, 0], shape: box, size: 
 shelf_book_8(shelf): { rel: [0.13, -0.65, 0.615, 1, 0, 0, 0], shape: box, size: [0.06, 0.2, 0.2, 0.5], color: [1, 0, 0], contact: -1, mass: 0.1, inertia: [0.000666667, 0.000363333, 0.000363333] },
 shelf_book_9(shelf): { rel: [0.29, -0.65, 0.615, 1, 0, 0, 0], shape: box, size: [0.06, 0.2, 0.2, 0.5], color: [1, 0, 0], contact: -1, mass: 0.1, inertia: [0.000666667, 0.000363333, 0.000363333] },
 
+l_robot(world) {
+  shape:ssBox, Q: "t(0 0.2 0.5) d(0 0 0 1)", size:[0.2 0.2 1.0 .04], color:[1 1 1], mass: .1, contact: 1,
+}
 
 box (world): { X:"t(0 0 0) d(0 0 0 1)" , shape:box, size: [0.06 0.20 0.20 0.5], color: [0 1 1], mass: .5,contact:1,
     joint:free, limits: [-10, 10, -10, 10, 0.4, 0.8,-4,4,-4,4,-4,4,-4,4]

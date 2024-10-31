@@ -14,7 +14,7 @@ bin_side2(bin): { rel: [-0.7, -0.2, 0.08, 1, 0, 0, 0], shape: box, size: [0.4, 0
 bin_side3(bin): { rel: [-0.5, -0.4, 0.08, 1, 0, 0, 0], shape: box, size: [0.03, 0.4, 0.14, 0.5], color: [1, 0.5, 0], contact: -1, mass: 5, inertia: [0.0748333, 0.00854167, 0.0670417] },
 bin_side4(bin): { rel: [-0.9, -0.4, 0.08, 1, 0, 0, 0], shape: box, size: [0.03, 0.4, 0.14, 0.5], color: [1, 0.5, 0], contact: -1, mass: 5, inertia: [0.0748333, 0.00854167, 0.0670417] },
 contact_point(box): { rel: [0, 0, 0.025, 1, 0, 0, 0], shape: marker, size: [0.1] },
-cam_frame_0: { pose: [-0.4, 0.1, 2, 0.0007963, -1, 0, 0], shape: marker, size: [0.1] },
+cam_frame_0: { pose: [-0.4, 0.1, 3, 0.0007963, -1, 0, 0], shape: marker, size: [0.1] },
 cam_frame_1: { pose: [0.4, 0.1, 2, 0.11685177,  -0.68908610,  -0.70502345,   0.12019962], shape: marker, size: [0.1] },
 cam_frame_2: { pose: [-1.2, 0.1, 2, 0.12603066,  -0.70400444,   0.68787629,  -0.12377495], shape: marker, size: [0.1] },
 r_panda_base: { multibody: True },

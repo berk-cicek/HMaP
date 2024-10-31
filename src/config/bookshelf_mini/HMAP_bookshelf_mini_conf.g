@@ -25,7 +25,7 @@ obstacle_0(shelf): { rel: [-0.2, -0.5, 0.615, 1, 0, 0, 0], joint: rigid, shape: 
 cam_frame_0(world): { rel: [0, 0.3, 0.7, 0, 0, -0.707107, 0.707107], shape: marker, size: [0.1] },
 cam_frame_1(world): { rel: [-0.3, 0, 1, 0.19566962,  -0.08933143,   0.88695007,  -0.40872102 ], shape: marker, size: [0.1] },
 cam_frame_2(world): { rel: [0.5, 0, 1, 0.24139866,  -0.11198010,  -0.87561048,   0.40310474], shape: marker, size: [0.1] },
-
+cam_frame_3(world): { pose: [0, -0.3, 2.0, 0.0007963, -1, 0, 0], shape: marker, size: [0.1] },
 
 l_panda_base: { multibody: True },
 l_panda_link0(l_panda_base): { rel: [0, 0.2, 0.05, 0.707388, 0, 0, -0.706825] },
