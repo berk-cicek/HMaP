@@ -21,6 +21,7 @@ box(shelf): { rel: [0.21, -0.6, 0.615, 1, 0, 0, 0], joint: rigid, shape: box, si
 obstacle_0(shelf): { rel: [-0.2, -0.5, 0.615, 1, 0, 0, 0], joint: rigid, shape: box, size: [0.14, 0.03, 0.2, 0.5], color: [1, 1, 0], contact: 1, mass: 0.1, inertia: [0.000340833, 0.000496667, 0.000170833] },
 #obstacle_0(shelf): { rel: [0, -0.6, 0.82, 1, 0, 0, 0], joint: rigid, shape: box, size: [0.14, 0.03, 0.2, 0.5], color: [1, 1, 0], contact: 1, mass: 0.1, inertia: [0.000340833, 0.000496667, 0.000170833] },
 
+dynamic_obstacle(world): { rel: [1, 1, 0.09, -1, 0, 0, 0], shape: ssBox, size: [0.04, 0.04, 0.04, 0.02], color: [1, 1, 0], contact: 1 },
 
 cam_frame_0(world): { rel: [0, 0.3, 0.7, 0, 0, -0.707107, 0.707107], shape: marker, size: [0.1] },
 cam_frame_1(world): { rel: [-0.3, 0, 1, 0.19566962,  -0.08933143,   0.88695007,  -0.40872102 ], shape: marker, size: [0.1] },

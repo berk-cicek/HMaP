@@ -17,6 +17,8 @@ shelf_book_7(shelf): { rel: [0.07, -0.65, 0.615, 1, 0, 0, 0], shape: box, size: 
 shelf_book_8(shelf): { rel: [0.13, -0.65, 0.615, 1, 0, 0, 0], shape: box, size: [0.06, 0.2, 0.2, 0.5], color: [1, 0, 0], contact: -1, mass: 0.1, inertia: [0.000666667, 0.000363333, 0.000363333] },
 shelf_book_9(shelf): { rel: [0.29, -0.65, 0.615, 1, 0, 0, 0], shape: box, size: [0.06, 0.2, 0.2, 0.5], color: [1, 0, 0], contact: -1, mass: 0.1, inertia: [0.000666667, 0.000363333, 0.000363333] },
 
+dynamic_obstacle(world): { rel: [1, 1, 0.09, -1, 0, 0, 0], shape: ssBox, size: [0.04, 0.04, 0.04, 0.02], color: [1, 1, 0], contact: 1 },
+
 l_robot(world) {
   shape:ssBox, Q: "t(0 0.2 0.5) d(0 0 0 1)", size:[0.2 0.2 1.0 .04], color:[1 1 1], mass: .1, contact: 1,
 }

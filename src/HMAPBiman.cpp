@@ -44,6 +44,7 @@ HMAPBiman::HMAPBiman(rai::Configuration C, rai::Configuration C2, arr qF, arr q_
     this->dyn_obs_idx = -1;
     this->dyn_obs_pos = {};
 
+
     if(tool_list.empty()) {
         this->is_tool_aval = false;
     } else {
@@ -78,11 +79,11 @@ bool HMAPBiman::run(){
     }
     
     calib = calibSkeleton(C);
-    cout << "Calibration: " << calib << endl;
-    cout << "Threshold: " << threshold << endl;
+    //cout << "Calibration: " << calib << endl;
+    //cout << "Threshold: " << threshold << endl;
 
     // PATH PLANNING
-    cout << "Generating Path Plan" << endl;
+    //cout << "Generating Path Plan" << endl;
     bool is_path_feas = generatePathPlan(path, qF);
     if(!is_path_feas) return 0;
 
@@ -91,18 +92,19 @@ bool HMAPBiman::run(){
     std::vector<std::string> waypoint_list;
     std::vector<std::string> contact_point_list;
 
-    std::string waypoint = "waypoint";
+    std::string waypoint = "waypoint" + std::to_string(idx);
 
     // Check if there is enough clearance to reach the object
     addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.001, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
     
-    cout << "Checking if object is reachable" << endl;
+    //cout << "Checking if object is reachable" << endl;
     // CHECK IF TARGET IS VISIBLE 
     std::string gripper = generateContactPoint(C, target, interacted_target, waypoint);
     if(gripper == ""){
         bool is_vis = getCameraView(C, "cam_frame_0", interacted_target, filter).d0 > 0;
         while(!is_vis && is_tool_aval && idx < path.d0) {
-            cout << "Object is not reachable" << endl;
+            waypoint = "waypoint" + std::to_string(rnd.uni(0, 10000));
+            //cout << "Object is not reachable" << endl;
             addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.001, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
             tool = useTool(C, waypoint, target);
             is_vis = getCameraView(C, "cam_frame_0", interacted_target, filter).d0 > 0;
@@ -110,6 +112,7 @@ bool HMAPBiman::run(){
         }
     } else {
         idx++;
+        waypoint = "waypoint" + std::to_string(rnd.uni(0, 10000));
         addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.001, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
     }
 
@@ -122,25 +125,20 @@ bool HMAPBiman::run(){
     int sol_fail_limit = 3;
     int sol_fail_count = 0;
 
-    cout << "The main loop"<< endl;
+    //cout << "The main loop"<< endl;
     std::string waypoint_opt = "";
     int time_step = 0;
     // THE MAIN LOOP
     // Now move the robot along the path
     while(idx < path.d0 ) {
-        C.view(false, "Current Configuration");
+        waypoint = "waypoint" + std::to_string(rnd.uni(0, 1000));
+        addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.001, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
         // ADD DYNAMIC OBSTACLE
         if(is_dynamic && idx == path.d0 / 3) {
             C.getFrame("dynamic_obstacle")->setPosition({path(idx+3*waypoint_factor,0), path(idx+3*waypoint_factor,1), path(idx+3*waypoint_factor,2)});
             C2.getFrame("dynamic_obstacle")->setPosition({path(idx+3*waypoint_factor,0), path(idx+3*waypoint_factor,1), path(idx+3*waypoint_factor,2)});
         } 
-        // CHANGE THE THRESHOLD (OPTIONAL)
-        //if(idx == 0) {
-        //    threshold = 4;
-        //} else {
-        //    threshold = 1;
-        //} 
-       
+
         int frame_err = 0;
         try {
 
@@ -171,16 +169,12 @@ bool HMAPBiman::run(){
                 if(is_aval_list[index] == false && is_tool_aval) {
                     homeTool(C, gripper, tool);
                     is_aval_list[index] = true;
-                    cout << "Gripper is homing the tool" << endl;
+                    //cout << "Gripper is homing the tool" << endl;
                 }
             }
 
-
-
-            cout << "Step No: " << idx << "/" << path.d0 << endl;
-            
-            addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.001, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
-
+            //cout << "Step No: " << idx << "/" << path.d0 << endl;
+        
             if(view) C.view(false, "Waypoint");
 
             // MOVE THE TARGET OBJECT
@@ -190,7 +184,7 @@ bool HMAPBiman::run(){
             } else {
                 is_feas = false;
             }
-            cout << "Is feasible: " << is_feas << endl;
+            //cout << "Is feasible: " << is_feas << endl;
 
             // HANDLE THE FAIL CASES
             // If the path is not feasible, use the tool to reach the object, if the tool is not available, calibrate the robot as a workaround 
@@ -207,59 +201,21 @@ bool HMAPBiman::run(){
                         idx ++;
                         calib = calibSkeleton(C);
 
-                        if(contact_point != ""){
-                            std::ostringstream oss;
-                            oss << C;
-                            if(is_save_C) Cs.push_back(oss.str());
-
-                            arr cp = C.getFrame(contact_point.c_str())->getRelativePosition();
-                            auto it = std::find(gripper_list.begin(), gripper_list.end(), gripper);
-                            index = std::distance(gripper_list.begin(), it);
-                            cp.append(index);
-                            cp.append(time_step);
-                            contact_points.append(cp);
-                            time_step++;
-                        }
-
                     // HOME THE ROBOT AND CALIBRATE
                     } else {
                         sol_fail_count++;
-                        cout << "Calibrating and homing the robot" << endl;
+                        //cout << "Calibrating and homing the robot" << endl;
                         homeSkeleton(C);
                         calib = calibSkeleton(C);
-                        cout << "Calibrated and homed the robot" << endl;
+                        //cout << "Calibrated and homed the robot" << endl;
                     }   
                     gripper = generateContactPoint(C, target, interacted_target, waypoint); 
                     if(gripper != ""){
-                        idx ++;
-                        addMarker(C, {path(idx,0), path(idx,1), path(idx,2)}, waypoint, "world", 0.001, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)});
-                    }
-                        
+                        idx ++; 
+                    }   
                 }
             }    
-
             else {
-                waypoint_opt = "waypoint_opt_" + std::to_string(idx);
-                addMarker(C_opt, {path(idx,0), path(idx,1), path(idx,2)}, waypoint_opt, "world", 0.1, false, {path(idx,3), path(idx,4), path(idx,5), path(idx,6)}); 
-                addMarker(C_opt, C.getFrame(contact_point.c_str())->getRelativePosition(), contact_point, target, 0.1, true); 
-                robot_list.push_back(gripper);
-                target_list.push_back(target);
-                
-                waypoint_list.push_back(waypoint_opt);
-                contact_point_list.push_back(contact_point);
-
-                sol_fail_count = 0;
-                std::ostringstream oss;
-                oss << C;
-                if(is_save_C) Cs.push_back(oss.str());
-
-                arr cp = C.getFrame(contact_point.c_str())->getRelativePosition();
-                auto it = std::find(gripper_list.begin(), gripper_list.end(), gripper);
-                index = std::distance(gripper_list.begin(), it);
-                cp.append(index);
-                cp.append(time_step);
-                contact_points.append(cp);
-                time_step++;
                 idx ++;
             }
 
@@ -274,8 +230,9 @@ bool HMAPBiman::run(){
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-    cout << "The HMAP is completed in " << duration.count() << "s" << endl;
+    duration_all = end - start;
+    cout << "The RRT is completed in " << duration_rrt.count() << "s" << endl;
+    cout << "The HMAP is completed in " << duration_all.count() << "s" << endl;
 
     //completeSkeleton(C_opt, robot_list, target_list, waypoint_list, contact_point_list);
     return 1;
@@ -286,23 +243,33 @@ void HMAPBiman::load_model(std::string model_path){
     is_model_aval = true;
     rai::Configuration C_n;
     C_n.addFile((model_path + "/config_0.g").c_str());
-    //C.view(true, "Initial Configuration");
     StringA all_frames = C_n.getFrameNames();
-
+    bool is_first = true;
     for(uint i = 0; i < all_frames.d0; i++){
         std::string name = all_frames(i).p;
 
-        if(name == "box"){
-            arr js = C_n.getFrame("box")->getPosition();
-            js.append({1, 0, 0, 0});
-            cout << js << endl;
+        if(name == target.c_str()){
+            arr js = C_n.getFrame(target.c_str())->getPosition();
+            js.append(C_n.getFrame(target.c_str())->getQuaternion());
             C2.setJointState(js);
+            C.getFrame(name.c_str())->setPosition(C_n.getFrame(name.c_str())->getPosition());
+            C.getFrame(name.c_str())->setQuaternion(C_n.getFrame(name.c_str())->getQuaternion());
+        }
+        
+        if(name.find("q_obs") != std::string::npos){
+            if(is_first){
+                q_obs.clear();
+                is_first = false;
+            }
+            q_obs.append(C_n.getFrame(name.c_str())->getPosition());
+            q_obs.append(C_n.getFrame(name.c_str())->getQuaternion());
+            
         }
 
         if(name.find("r_") == std::string::npos && name.find("l_") == std::string::npos && name.find("stick") == std::string::npos &&
            name.find("cam") == std::string::npos && name.find("wp") == std::string::npos && name.find("q_obs") == std::string::npos &&
            name.find("waypoint") == std::string::npos && name.find("contact_point") == std::string::npos && name.find("candidate_point") == std::string::npos &&
-           name.find("points") == std::string::npos && name.find("box") == std::string::npos) {
+           name.find("points") == std::string::npos && name.find(target.c_str()) == std::string::npos && name.find("obstacle") == std::string::npos) {
 
             C.getFrame(name.c_str())->setPosition(C_n.getFrame(name.c_str())->getPosition());
             C.getFrame(name.c_str())->setQuaternion(C_n.getFrame(name.c_str())->getQuaternion());
@@ -310,6 +277,10 @@ void HMAPBiman::load_model(std::string model_path){
             C2.getFrame(name.c_str())->setQuaternion(C_n.getFrame(name.c_str())->getQuaternion());
         }
     }
+
+    q_obs.reshape(total_obstacle_count, 7);
+    
+
     //C.view(true, "Initial Configuration 2");
     int cp_count = 0;
     std::string wp_name;
@@ -354,8 +325,6 @@ void HMAPBiman::load_model(std::string model_path){
         offline_cp_model.append(cp);
     }
 
-
-
     std::ifstream file2(model_path + "/" + wp_name);
     if (!file2.is_open()) {
         std::cerr << "Error: Could not open the file!" << std::endl;
@@ -376,8 +345,13 @@ void HMAPBiman::load_model(std::string model_path){
 
     file2.close();
     p.reshape(p.d0/7,7);
+    bool is_obs = total_obstacle_count > 0;
 
-    setPath(p, false, 0);
+    rai::Configuration C_n2;
+    C_n2.addFile((model_path + "/config_"+  std::to_string(cp_count) +".g").c_str());
+    qF = C_n2.getFrame(target.c_str())->getPose();
+
+    setPath(p, is_obs, 0);
     offline_cp_model.reshape(cp_count, 4);
 
 }
@@ -386,7 +360,7 @@ void HMAPBiman::load_model(std::string model_path){
 /*----------------------------------------------------------------------------------------------------------------------*/
 void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string> robot_list, std::vector<std::string> target_list, std::vector<std::string> waypoint_list, std::vector<std::string> contact_point_list) {
     C.view(true, "Last");
-    cout << "Optimizing as a whole" << endl;
+    //cout << "Optimizing as a whole" << endl;
     rai::Skeleton S;
     S.collisions = rai::getParameter<bool>("collisions", true);
     S.verbose = -1;    
@@ -411,7 +385,7 @@ void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string>
     std::string contact_foo = "";
 
     for(uint i = 0; i < count; i++){
-        cout << "Limit: " << limit << endl;
+        //cout << "Limit: " << limit << endl;
         if(i == 0){
             contact_foo = contact_point_list[i];
             limit = s3 + multiplier;
@@ -421,7 +395,7 @@ void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string>
                 limit += multiplier;
             } else {
                 contact_foo = contact_point_list[i];
-                cout << "i: " << i << endl;
+                //cout << "i: " << i << endl;
                 limit += multiplier;
 
                 for(uint j = foo; j < i; j++){
@@ -433,7 +407,7 @@ void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string>
         }
     }
 
-    cout << "Limit List: " << limit_list << endl;
+    //cout << "Limit List: " << limit_list << endl;
     std::string contact_point = "";
     std::string contact_point_prev = "";
     double D = 0;
@@ -447,15 +421,15 @@ void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string>
             D += multiplier;
             if(contact_point_prev != "") {
                 S.addEntry({0.3+D, 0.5+D}, rai::SY_stable , {"table", "box"});
-                cout << "D: " << D+0.3 << " Limit: " << 0.5+D << " State: Change, Release" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
+                //cout << "D: " << D+0.3 << " Limit: " << 0.5+D << " State: Change, Release" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
             }
 
             S.addEntry({s1+D, limit_list(i)}, rai::SY_touch , {gripper.c_str(), target.c_str()});
-            cout << "D: " << D+s1 << " Limit: " << limit_list(i) << " State: Change, Stable" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
+            //cout << "D: " << D+s1 << " Limit: " << limit_list(i) << " State: Change, Stable" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
             S.addEntry({s2+D, limit_list(i)}, rai::SY_stable, {gripper.c_str(), target.c_str()});
-            cout << "D: " << D +s2 << " Limit: " << limit_list(i) << " State: Change, Touch" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
+            //cout << "D: " << D +s2 << " Limit: " << limit_list(i) << " State: Change, Touch" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
             S.addEntry({s3+D, limit_list(i)}, rai::SY_poseEq, {waypoint.c_str(), target.c_str()});
-            cout << "D: " << D +s3<< " Limit: " << limit_list(i) << " State: Change, PoseEq" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
+            //cout << "D: " << D +s3<< " Limit: " << limit_list(i) << " State: Change, PoseEq" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
             cp_st.append(D+s1);
             D += s3;
             komo_count++;
@@ -463,7 +437,7 @@ void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string>
             D += multiplier;
             S.addEntry({D, D}, rai::SY_poseEq, {waypoint.c_str(), target.c_str()});
             cp_st.append(D);
-            cout << "D: " << D << " Limit: " << limit_list(i) << " State: Move" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
+            //cout << "D: " << D << " Limit: " << limit_list(i) << " State: Move" << " Gripper: " << gripper << " Contact: " << contact_point << " Waypoint: " << waypoint << endl;
             komo_count++;
         }
         contact_point_prev = contact_point;
@@ -472,14 +446,14 @@ void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string>
 
     D = 0;
     komo_path = S.getKomo_path(C, komo_count*2, 1e1, 1e-2, 1e-3, 1e2);
-    cout << "CP list: " << cp_st << endl;
+    //cout << "CP list: " << cp_st << endl;
     contact_point_prev = "";
     for(uint i = 0; i < count; i++){
         gripper = robot_list[i];
         contact_point = contact_point_list[i];
         if(contact_point_prev != contact_point){
             komo_path->addObjective({cp_st(i), limit_list(i)}, FS_positionDiff, {gripper.c_str(), contact_point.c_str()}, OT_sos, {1e0});
-            cout << "D: " << cp_st(i) << " Limit: " << limit_list(i) << " State: CP" << " Gripper: " << gripper << " Contact: " << contact_point  << endl;
+            //cout << "D: " << cp_st(i) << " Limit: " << limit_list(i) << " State: CP" << " Gripper: " << gripper << " Contact: " << contact_point  << endl;
         }
         contact_point_prev = contact_point;
     }
@@ -489,14 +463,14 @@ void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string>
     sol.opt.verbose = -1;
     sol.setProblem(komo_path->nlp());
     auto ret = sol.solve();
-    cout << "Move Cost: " <<ret->eq<< endl;
+    //cout << "Move Cost: " <<ret->eq<< endl;
     C.view(true, "Optimized");
-    cout <<komo_path->report(true, true, true) <<endl;
+    //cout <<komo_path->report(true, true, true) <<endl;
     komo_path->pathConfig.viewer()->raiseWindow();
     komo_path->view_play(true, 0.2);
     arr state = komo_path->pathConfig.getFrameState();
     double frame_count = komo_path->pathConfig.getFrameNames().d1;
-    cout << "State Count: " << state.d0 << " " << state.d1 << endl;
+    //cout << "State Count: " << state.d0 << " " << state.d1 << endl;
     state = state.rows(state.d0-frame_count,state.d0);
     C.setFrameState(state);
     C.view(true, "Move Skeleton");
@@ -507,8 +481,7 @@ void HMAPBiman::completeSkeleton(rai::Configuration& C, std::vector<std::string>
 /*----------------------------------------------------------------------------------------------------------------------*/
 
 bool HMAPBiman::generatePathPlan(arr& path_plan, arr goal) {
-    is_path_blocked = false;
-
+    
     std::vector<std::vector<int>> obstacle_combinations;
     // Generate the combinations of obstacles
     for (int i = 1; i < (1 << total_obstacle_count); ++i) {
@@ -517,24 +490,26 @@ bool HMAPBiman::generatePathPlan(arr& path_plan, arr goal) {
 
             if (i & (1 << j)) {
                 combination.push_back(j);
-                cout << "Comb: " << j << endl; 
+                //cout << "Comb: " << j << endl; 
             }
         }
 
         obstacle_combinations.push_back(combination);
     }
     
-    if(!is_path_given) {
+    auto start = std::chrono::high_resolution_clock::now();
 
+    if(!is_path_given || !is_model_aval) {
+        
         int combination_count = obstacle_combinations.size();
-
+        
         // Continue to find a path until a feasible path is found by removing obstacles
         do { 
-            cout << "Checking if path is available" << endl;
+            //cout << "Checking if path is available" << endl;
             is_path_aval = RRT(C2, path_plan, goal, view);
 
             if(!is_path_aval && total_obstacle_count == 0){
-                cout << "RRT could not find a solution" << endl;
+                //cout << "RRT could not find a solution" << endl;
                 return 0;
             }
 
@@ -550,11 +525,10 @@ bool HMAPBiman::generatePathPlan(arr& path_plan, arr goal) {
 
                 for (uint i = 0; i < obstacle_combinations[obstacle_count].size(); i++) {
                     int obs = obstacle_combinations[obstacle_count][i];
-                    cout << "Eliminating: " << obs << endl;
+                    //cout << "Eliminating: " << obs << endl;
                     C2.getFrame(("obstacle_" + std::to_string(obs)).c_str())->setContact(0);
                 }
             }  
-
 
         } while (!is_path_aval && (obstacle_count <= combination_count) && total_obstacle_count != 0);
         
@@ -565,20 +539,24 @@ bool HMAPBiman::generatePathPlan(arr& path_plan, arr goal) {
         
     }
     
+    auto end = std::chrono::high_resolution_clock::now();
+    duration_rrt = end - start;
+
     // Move the obstacle to a feasible position
     if(is_path_blocked && obstacle_count > -1) {  
-        cout << "REMOVING... "  << endl;
+        //cout << "REMOVING... "  << endl;
         for (uint i = 0; i < obstacle_combinations[obstacle_count].size(); i++) {
             is_feas = false;
             
             int obs = obstacle_combinations[obstacle_count][i];
             std::string obstacle = "obstacle_" + std::to_string(obs);
-            addMarker(C, {q_obs(obs, 0), q_obs(obs, 1), q_obs(obs, 2)}, "waypoint_obs" , "world", 0.1,  false, {q_obs(obs, 3), q_obs(obs, 4), q_obs(obs, 5), q_obs(obs, 6)});
+            std::string waypoint_obs = "waypoint_obs_" + std::to_string(rnd.uni(0, 1000));
+            addMarker(C, {q_obs(obs, 0), q_obs(obs, 1), q_obs(obs, 2)}, waypoint_obs.c_str() , "world", 0.1,  false, {q_obs(obs, 3), q_obs(obs, 4), q_obs(obs, 5), q_obs(obs, 6)});
           
-            std::string gripper = findContactPoint(C, obstacle, obstacle, "waypoint_obs");
+            std::string gripper = findContactPoint(C, obstacle, obstacle, waypoint_obs.c_str());
 
             if (gripper == "" && is_tool_aval) {
-                tool = useTool(C, "waypoint_obs" , obstacle);
+                tool = useTool(C, waypoint_obs.c_str() , obstacle);
             } 
 
             if (gripper == "" && !is_tool_aval) {
@@ -598,7 +576,7 @@ arr HMAPBiman::adjust_waypoint(rai::Configuration C2, std::string target, std::s
     komo.addObjective({}, FS_accumulatedCollisions, {}, OT_eq, {1e2}); // constraint: gripper position
     NLP_Solver solver(komo.nlp(), 2);
     auto ret = solver.solve();
-    cout << "Move Cost: " <<ret->eq<< endl;
+    //cout << "Move Cost: " <<ret->eq<< endl;
     arr n_waypoint = komo.getPath_qOrg()[0];
     return n_waypoint;
 }
@@ -630,7 +608,6 @@ void HMAPBiman::setPath(arr path, bool is_blocked, int obstacle_count){
     this->path = path;
     this->is_path_blocked = is_blocked;
     this->is_path_given = true;
-    this->obstacle_count = obstacle_count;
 }
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------*/
@@ -645,6 +622,7 @@ void HMAPBiman::setC2(rai::Configuration C2){
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------*/
 rai::Frame& HMAPBiman::addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat) {
+    
     rai::Frame* marker = C.addFrame(name.c_str(), parent.c_str());
     marker->setShape(rai::ST_marker, {size, size, size, size});
     if(is_relative) {
@@ -662,7 +640,7 @@ rai::Frame& HMAPBiman::addMarker(rai::Configuration& C, const arr pos, const std
 /*----------------------------------------------------------------------------------------------------------------------*/
 bool HMAPBiman::RRT(rai::Configuration C2, arr& path, arr goal, bool view) {
     arr q0 =  C2.getJointState();
-    std::cout << "Start State: " << q0 << " Final State: " << goal << std::endl;
+    //cout << "Start State: " << q0 << " Final State: " << goal << std::endl;
     if(view){
         addMarker(C2, {q0(0), q0(1), q0(2)}, "q0", "world", 0.1, false, {q0(3), q0(4), q0(5), q0(6)});
         addMarker(C2, {goal(0), goal(1), goal(2)}, "qF", "world", 0.1, false, {goal(3), goal(4), goal(5), goal(6)});
@@ -670,13 +648,14 @@ bool HMAPBiman::RRT(rai::Configuration C2, arr& path, arr goal, bool view) {
     }
 
     auto problem = std::make_shared<ConfigurationProblem>(C2, true, 1e-3, 0);
+
     auto collisionPairs = rai::getParameter<StringA>("collisionPairs", {});
     auto coll = C2.getCollidablePairs();
     StringA collisionPairsString;
     for (const auto& frame : coll) {
         collisionPairsString.append(frame->name);
     }
-    std::cout << coll.N <<  std::endl;
+    //cout << coll.N <<  std::endl;
     if(collisionPairs.N) {
         problem->setExplicitCollisionPairs(collisionPairsString);
     }
@@ -686,9 +665,10 @@ bool HMAPBiman::RRT(rai::Configuration C2, arr& path, arr goal, bool view) {
         bool isFeas = false;
         auto ret = std::make_shared<SolverReturn>();
         for (int i = 0; i < 30 && !isFeas; ++i) {
-            cout << "RRT Iteration: " << i << endl;
+            //cout << "RRT Iteration: " << i << endl;
 
             RRT_PathFinder rrt(*problem, q0, goal, 0.1/waypoint_factor);//rrt(*problem, q0, qF, 0.03, 8, 5000, 1);
+            rrt.verbose = -1;
 
             ret->time -= rai::cpuTime();
             arr temp_path = rrt.run();
@@ -702,15 +682,15 @@ bool HMAPBiman::RRT(rai::Configuration C2, arr& path, arr goal, bool view) {
             path = ret->x;
         }
     } catch(...){
-        std::cout << "Start State: " << q0 << " Final State: " << goal << std::endl;
+        //cout << "Start State: " << q0 << " Final State: " << goal << std::endl;
         std::cerr << "Error: Path is not feasible!" << std::endl;
         return false;
     }
 
     
-    std::cout << "Path Len: " << path.N << std::endl;
+    //cout << "Path Len: " << path.N << std::endl;
     if(path.N == 0) {
-        std::cout << "Start State: " << q0 << " Final State: " << qF << std::endl;
+        //cout << "Start State: " << q0 << " Final State: " << qF << std::endl;
         std::cerr << "Error: Path is not feasible!" << std::endl;
         return false;
     }
@@ -723,7 +703,7 @@ bool HMAPBiman::RRT(rai::Configuration C2, arr& path, arr goal, bool view) {
             rai::wait(0.1);
         }
     }
-    cout << "Path Length: " << path.d0 << endl; 
+    //cout << "Path Length: " << path.d0 << endl; 
     return true;
 }
 /*----------------------------------------------------------------------------------------------------------------------*/
@@ -835,20 +815,20 @@ arr HMAPBiman::getCameraView(rai::Configuration& C, const std::string& cam_name,
                 return arr();
             }
             homeSkeleton(C);
-            cout << "Homing for camera" << endl;
+            //cout << "Homing for camera" << endl;
             is_empty = true;
         } else {
             if(threshold < 0) {
                 return pts_filtered;
             }
             pts_filtered.reshape(pts_filtered.d0/3,3);
-            cout << "Filtered Points Length: " << pts_filtered.d0 << endl;
+            //cout << "Filtered Points Length: " << pts_filtered.d0 << endl;
             if(pts_filtered.d0 <= threshold ){
                 if(is_empty){
                     return arr();
                 }
                 homeSkeleton(C);
-                cout << "Homing for camera" << endl;
+                //cout << "Homing for camera" << endl;
                 is_empty = true;
             } else {
                 //pts_frame->setPointCloud(pts_filtered);
@@ -862,7 +842,7 @@ arr HMAPBiman::getCameraView(rai::Configuration& C, const std::string& cam_name,
     } while(is_empty);
 
     c++;
-    cout << pts_filtered.d0 << " " << pts_filtered.d1 << endl;
+    //cout << pts_filtered.d0 << " " << pts_filtered.d1 << endl;
     return pts_filtered;
 }
 
@@ -870,7 +850,7 @@ arr HMAPBiman::getCameraView(rai::Configuration& C, const std::string& cam_name,
 /*----------------------------------------------------------------------------------------------------------------------*/
 arr HMAPBiman::candidateContactPoint(rai::Configuration& C, const arr& pts, const int iter, bool isTransform){
     if(pts.d0 == 0) {
-        std::cout << "No points found in the camera view" << std::endl;
+        //cout << "No points found in the camera view" << std::endl;
         return {};
     }
     arr target_point;
@@ -897,23 +877,24 @@ arr HMAPBiman::candidateContactPoint(rai::Configuration& C, const arr& pts, cons
 const std::string HMAPBiman::generateContactPoint(rai::Configuration& C, const std::string& target, const std::string& interacted_target, const std::string& waypoint){
     static uint cp_count = 0;
     if(is_model_aval && cp_count < offline_cp_model.d0) {
-        cout << "Running the model for contact point" << endl;
+        //cout << "Running the model for contact point" << endl;
         // Give the model the configuration and retrieve the contact point
         arr cp_g = offline_cp_model[cp_count];
-        addMarker(C, {cp_g(0), cp_g(1), 0.03}, "contact_point_m", target, 0.001, true);
+        std::string contact_point_m = "contact_point_m" + std::to_string(rnd.num(0, 1000));
+        addMarker(C, {cp_g(0), cp_g(1), 0.03}, contact_point_m.c_str(), target, 0.001, true);
 
         std::string gripper = gripper_list[cp_g(3)];
         // Check if it is feasible
-        std::shared_ptr<SolverReturn> r = moveSkeleton(C, gripper, target, interacted_target, "contact_point_m", waypoint);
-        cout << "Contact Point Model: " << cp_g << endl;
-        cout << "CP: " << cp_g << endl;
+        std::shared_ptr<SolverReturn> r = moveSkeleton(C, gripper, target, interacted_target, contact_point_m.c_str(), waypoint);
+        //cout << "Contact Point Model: " << cp_g << endl;
+        //cout << "CP: " << cp_g << endl;
         //C.view(true, "Contact Point Model");
         
         bool f = false;
         if(r != nullptr) f = r->eq - calib <= threshold;
         if(f) {
             cp_count ++;
-            contact_point = "contact_point_m";
+            contact_point = contact_point_m;
             return gripper;
         }
         else{
@@ -949,17 +930,17 @@ const std::string HMAPBiman::findContactPoint(rai::Configuration& C, const std::
     max_iter = 20;
 
     for (iter = 0; iter < max_iter && fail < fail_lim; iter++) {
-        cout << "Iteration: " << iter << " / " << max_iter << endl;
+        //cout << "Iteration: " << iter << " / " << max_iter << endl;
 
         if (pts.d0 == 0){
-            cout << "No candidate contact point found" << endl;
+            //cout << "No candidate contact point found" << endl;
             return "";
         }   
 
         double pt_idx = rnd.num(0, pts.d0 - 1);
         arr c_pts = candidateContactPoint(C, pts, pt_idx, true);
-
-        addMarker(C, c_pts, "candidate_point", target, 0.0001, false);
+        std::string candidate_point = "candidate_point_" + std::to_string(rnd.num(0, 1000));
+        addMarker(C, c_pts, candidate_point.c_str(), target, 0.0001, false);
 
         int ret_fail = 0;
         double cost = threshold + 1;
@@ -969,15 +950,15 @@ const std::string HMAPBiman::findContactPoint(rai::Configuration& C, const std::
         for (int i = 0; i < gripper_count; i++){
             std::string g = gripper_list[i];
             bool is_timeout = false;
-            std::shared_ptr<SolverReturn> ret = moveSkeletonWithTimeout(C, g, target, interacted_target, "candidate_point", waypoint.c_str(), true, 1, is_timeout);
+            std::shared_ptr<SolverReturn> ret = moveSkeletonWithTimeout(C, g, target, interacted_target, candidate_point.c_str(), waypoint.c_str(), true, 1, is_timeout);
             if(is_timeout) {
                 ret_fail++;
             } 
 
             cost = ret->eq - calib;
             if(cost < threshold) {
-                cout << "Found a feasible contact point" << endl;
-                cout << "The " << g << " is closer to the object" << endl;
+                //cout << "Found a feasible contact point" << endl;
+                //cout << "The " << g << " is closer to the object" << endl;
                 contact_point = "contact_point_" + std::to_string(cp_count);
                 addMarker(C, c_pts, contact_point, target, 0.001, false);
                 cp_count++;
@@ -987,12 +968,12 @@ const std::string HMAPBiman::findContactPoint(rai::Configuration& C, const std::
 
         if(ret_fail && gripper_count != 1) {
             fail++;
-            cout << "Fail No: " << fail  << "/" << fail_lim << endl;
+            //cout << "Fail No: " << fail  << "/" << fail_lim << endl;
         }
 
 
     }
-    cout << "Could not find a feasible contact point" << endl;
+    //cout << "Could not find a feasible contact point" << endl;
     return "";   
 }
 /*----------------------------------------------------------------------------------------------------------------------*/
@@ -1015,7 +996,7 @@ double HMAPBiman::calibSkeleton(rai::Configuration& C) {
     sol.setProblem(komo_path->nlp());
     auto ret = sol.solve();
     if(view) {
-        cout <<komo_path->report(true, true, true) <<endl;
+        //cout <<komo_path->report(true, true, true) <<endl;
         C.view(true, "Calib Skeleton");
     }
     return ret->eq;
@@ -1071,7 +1052,7 @@ std::shared_ptr<SolverReturn> HMAPBiman::moveSkeletonWithTimeout(rai::Configurat
     // Wait for the result, but only for the timeout duration
     if (future.wait_for(std::chrono::seconds(timeout_seconds)) == std::future_status::timeout) {
         // If timeout occurs, return null or handle as appropriate
-        std::cout << "moveSkeleton for " << gripper << " timed out." << std::endl;
+        //cout << "moveSkeleton for " << gripper << " timed out." << std::endl;
         is_timeout = true;
     }
     
@@ -1097,12 +1078,12 @@ std::shared_ptr<SolverReturn> HMAPBiman::moveSkeleton(rai::Configuration& C, con
     std::shared_ptr<KOMO> komo_path;
 
     if(!is_aval_list[index]) {
-        S.addEntry({0.1, -1}, rai::SY_stable, {"table", "stick"});
+        S.addEntry({0.1, -1}, rai::SY_stable, {"table", tool.c_str()});
         S.addEntry({0.3, -1}, rai::SY_touch, {gripper.c_str(), interacted_target.c_str()});
         S.addEntry({0.5, -1}, rai::SY_stable, {gripper.c_str(), interacted_target.c_str()});
         S.addEntry({1, -1}, rai::SY_poseEq, {waypoint.c_str(), target.c_str()});  
     } else {
-        S.addEntry({0.3, -1}, rai::SY_touch, {gripper.c_str(), interacted_target.c_str()});
+        S.addEntry({0.1, 0.3}, rai::SY_touch, {gripper.c_str(), interacted_target.c_str()});
         S.addEntry({0.5, -1}, rai::SY_stable, {gripper.c_str(), interacted_target.c_str()});
         S.addEntry({1, -1}, rai::SY_poseEq, {waypoint.c_str(), target.c_str()});
     }
@@ -1118,10 +1099,10 @@ std::shared_ptr<SolverReturn> HMAPBiman::moveSkeleton(rai::Configuration& C, con
     sol.setProblem(komo_path->nlp());
     auto ret = sol.solve();
 
-    cout << "Move Cost: " <<ret->eq - calib<< endl;
+    //cout << "Move Cost: " <<ret->eq - calib<< endl;
     
     
-    if(view)cout <<komo_path->report(true, true, true) <<endl;
+    //if(view)cout <<komo_path->report(true, true, true) <<endl;
 
     if(((ret->eq - calib) <= threshold)) {
         if(view){
@@ -1141,11 +1122,11 @@ std::shared_ptr<SolverReturn> HMAPBiman::moveSkeleton(rai::Configuration& C, con
         C_v.copy(C);
         C_views.push_back(C_v);
 
-        cout << "Waypoint: " << C.getFrame(waypoint.c_str())->getPose() << " Pose: " << C.getFrame("box")->getPose() <<  endl;
+        //cout << "Waypoint: " << C.getFrame(waypoint.c_str())->getPose() << " Pose: " << C.getFrame("box")->getPose() <<  endl;
         if(view) C.view(true, "Move Skeleton");
         
         is_aval_list[index] = true;
-        cout << "End Move Skeleton" << endl;
+        //cout << "End Move Skeleton" << endl;
     } 
     
     
@@ -1177,7 +1158,7 @@ double HMAPBiman::toolSkeleton(rai::Configuration& C, const std::string& tool, c
     sol.setProblem(komo_path->nlp());
     auto ret = sol.solve();
 
-    cout << "Tool Cost: " << ret->eq << endl;
+    //cout << "Tool Cost: " << ret->eq << endl;
 
     if(!isTrial) {
         if(view){
@@ -1196,7 +1177,7 @@ double HMAPBiman::toolSkeleton(rai::Configuration& C, const std::string& tool, c
         C_v.copy(C);
         C_views.push_back(C_v);
         if(view) C.view(true, "Tool Skeleton");
-        cout << "End Tool Skeleton" << endl;
+        //cout << "End Tool Skeleton" << endl;
     }
 
     return ret->eq;
@@ -1212,7 +1193,7 @@ void HMAPBiman::toolSelection(rai::Configuration& C, const std::string waypoint,
         std::string tool = tool_list[i];
         for  (int j = 0; j < s2; j++){
             std::string gripper = gripper_list[j];
-            cout << "Tool: " << tool << " Gripper: " << gripper << endl;
+            //cout << "Tool: " << tool << " Gripper: " << gripper << endl;
             double cost = toolSkeleton(C, tool, target, gripper, waypoint, true);
             cost_arr[i][j] = cost;
         }
@@ -1233,9 +1214,9 @@ void HMAPBiman::toolSelection(rai::Configuration& C, const std::string waypoint,
     tool_out = tool_list[min_row];
     gripper_out = gripper_list[min_col];
 
-    cout << "Best Tool: " << tool_out << endl;
-    cout << "Best Gripper: " << gripper_out << endl;
-
+    //cout << "Best Tool: " << tool_out << endl;
+    //cout << "Best Gripper: " << gripper_out << endl;
+    this->tool = tool_out;
     auto it = std::find(gripper_list.begin(), gripper_list.end(), gripper_out);
     int index = std::distance(gripper_list.begin(), it);
     is_aval_list[index] = false;
@@ -1278,7 +1259,7 @@ void HMAPBiman::homeTool(rai::Configuration& C, const std::string& gripper, cons
 /*----------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------*/
 std::string HMAPBiman::useTool(rai::Configuration& C, const std::string waypoint, const std::string target){
-    cout << "Tool use initiated!" << endl;
+    //cout << "Tool use initiated!" << endl;
     std::string gripper_tool;
     std::string tool; 
     toolSelection(C, waypoint, target, gripper_tool, tool);
@@ -1347,7 +1328,7 @@ void HMAPBiman::displaySolution(){
             rai::wait(0.1);
         }
         
-        cout << i << "/" << state_count << endl;
+        //cout << i << "/" << state_count << endl;
     }
     return;
 } 

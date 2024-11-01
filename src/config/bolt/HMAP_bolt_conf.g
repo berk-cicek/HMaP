@@ -33,7 +33,7 @@ cam_frame_1: { pose: [0.4, 0.1, 3, 0.11685177,  -0.68908610,  -0.70502345,   0.1
 cam_frame_2: { pose: [-1.2, 0.1, 3, 0.12603066,  -0.70400444,   0.68787629,  -0.12377495], shape: marker, size: [0.1] },
 
 l_panda_base: { multibody: True },
-l_panda_link0(l_panda_base): { rel: [-0.2, 1.1, 0.05, 0.707388, 0, 0, -0.706825] },
+l_panda_link0(l_panda_base): { rel: [-0.2, 0.96, 0.05, 0.707388, 0, 0, -0.706825] },
 l_panda_link0_0(l_panda_link0): { shape: mesh, mesh: </home/bora/git/botop/rai-robotModels/panda/franka_description/meshes/visual/link0.ply>, visual: True },
 l_panda_joint1_origin(l_panda_link0): { rel: [0, 0, 0.333, 1, 0, 0, 0] },
 l_panda_joint1(l_panda_joint1_origin): { joint: hingeZ, limits: [-2.8973, 2.8973, 2.175, -1, 87, 2.175, -1, 87], ctrl_limits: [2.175, -1, 87] },

@@ -101,7 +101,9 @@ private:
     std::vector<bool> is_aval_list;
     std::vector<std::string> Cs;
     std::vector<rai::Configuration> C_views;
-    
+    std::chrono::duration<double> duration_rrt;
+    std::chrono::duration<double> duration_all;
+
     rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {});
     arr getCameraView(rai::Configuration& C, const std::string& cam_name, const std::string& target, const double filter = 0.5, int threshold = 15);
     arr candidateContactPoint(rai::Configuration& C, const arr& pts, const int iter, bool isTransform = true);
