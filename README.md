@@ -1,7 +1,6 @@
-![flowchart_new](https://github.com/user-attachments/assets/ea06998d-1b73-4e34-b727-68b0cfdfdb89)# H-MaP: Iterative and Hybrid Sequential Manipulation Planner
 ## Overview
 <p align="center">
-  <img src="https://github.com/berk-cicek/HMaP/blob/main/misc/Diagram.svg" alt="HMaP"/>
+  <img src=![flowchart_new](https://github.com/user-attachments/assets/ea06998d-1b73-4e34-b727-68b0cfdfdb89) alt="HMaP"/>
 </p>!
 
 This paper introduces H-MaP, a hybrid sequential manipulation planner that addresses complex tasks requiring both sequential actions and dynamic contact mode switches. Our approach reduces configuration space dimensionality by decoupling object trajectory planning from manipulation planning through object-based waypoint generation, informed contact sampling, and optimization-based motion planning. This architecture enables handling of challenging scenarios involving tool use, auxiliary object manipulation, and bimanual coordination. Experimental results across seven diverse tasks demonstrate H-MaP's superior performance compared to existing methods, particularly in highly constrained environments where traditional approaches fail due to local minima or scalability issues. The planner's effectiveness is validated through both simulation and real-robot experiments.
