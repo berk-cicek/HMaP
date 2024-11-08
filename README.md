@@ -74,5 +74,5 @@ cd test/<test_name>/
 To understand how HMaP operates, edit the environment in src/config and task parameters in src/HMAPBiman.cpp.
 To understand how informed contact sampling operates, you can navigate to its directory, 'informedContact' to take a closer look.
 <p align="center">
-  <img src="https://github.com/berk-cicek/HMaP/blob/main/misc/robot_book_white" alt="HMaP2"/>
+  <img src="https://github.com/berk-cicek/HMaP/blob/main/misc/robot_book_white.png" alt="HMaP2"/>
 </p>
