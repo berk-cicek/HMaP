@@ -42,6 +42,8 @@ public:
     std::vector<std::string> getCs();
     void displaySolution();
     void setPath(arr path, bool is_blocked, int obstacle_count);
+    void getTime(double& all, double& rrt);
+
     void setC(rai::Configuration C);
     void setC2(rai::Configuration C2);
     bool RRT(rai::Configuration C2, arr& path, arr goal, bool view = true);
@@ -98,12 +100,15 @@ private:
     std::vector<std::string> tool_list;
     std::vector<std::string> gripper_list;
     std::vector<std::shared_ptr<KOMO>> state_all;
+    std::vector<std::shared_ptr<KOMO>> komo_waypoints;
     std::vector<bool> is_aval_list;
     std::vector<std::string> Cs;
     std::vector<rai::Configuration> C_views;
     std::chrono::duration<double> duration_rrt;
     std::chrono::duration<double> duration_all;
 
+    rai::Frame& addBox(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, arr size, bool is_relative, arr col, arr quat = {});
+    rai::Frame& addPoint(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr col, arr quat = {});
     rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {});
     arr getCameraView(rai::Configuration& C, const std::string& cam_name, const std::string& target, const double filter = 0.5, int threshold = 15);
     arr candidateContactPoint(rai::Configuration& C, const arr& pts, const int iter, bool isTransform = true);
