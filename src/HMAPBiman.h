@@ -35,7 +35,7 @@
 
 class HMAPBiman {
 public:
-    HMAPBiman(rai::Configuration C, rai::Configuration C2, arr qF, arr q_obs, std::string target, std::string interacted_target, int total_obstacle_count, std::vector<std::string> tool_list, std::vector<std::string> gripper_list, double filter, std::string video_path, int waypoint_factor, bool view);
+    HMAPBiman(rai::Configuration C, rai::Configuration C2, arr qF, arr q_obs, std::string target, std::string interacted_target, int total_obstacle_count, std::vector<std::string> tool_list, std::vector<std::string> gripper_list, double filter, std::string video_path, int waypoint_factor, std::string cam, int verbose);
     bool run();
     arr getContactPoints();
     arr getPath();
@@ -43,12 +43,11 @@ public:
     void displaySolution();
     void setPath(arr path, bool is_blocked, int obstacle_count);
     void getTime(double& all, double& rrt);
-
+    rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {});
     void setC(rai::Configuration C);
     void setC2(rai::Configuration C2);
-    bool RRT(rai::Configuration C2, arr& path, arr goal, bool view = true);
+    bool RRT(rai::Configuration C2, arr& path, arr goal);
     void set_dynamic_obs();
-    void completeSkeleton(rai::Configuration& C, std::vector<std::string> robot_list, std::vector<std::string> target_list, std::vector<std::string> waypoint_list, std::vector<std::string> contact_point_list);
     void load_model(std::string model_path);
     
     bool is_save_C;
@@ -75,7 +74,7 @@ private:
     bool is_feas;
     bool is_path_aval;
     bool is_path_blocked;
-    bool view;
+    int verbose;
     int dyn_obs_idx;
     int idx;
     int gripper_count;
@@ -92,6 +91,7 @@ private:
     int state_all_d2;
     int f_count;
     int state_count;
+    std::string cam;
     std::string tool;
     std::string target;
     std::string interacted_target;
@@ -109,7 +109,6 @@ private:
 
     rai::Frame& addBox(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, arr size, bool is_relative, arr col, arr quat = {});
     rai::Frame& addPoint(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr col, arr quat = {});
-    rai::Frame& addMarker(rai::Configuration& C, const arr pos, const std::string& name, const std::string& parent, double size, bool is_relative, arr quat = {});
     arr getCameraView(rai::Configuration& C, const std::string& cam_name, const std::string& target, const double filter = 0.5, int threshold = 15);
     arr candidateContactPoint(rai::Configuration& C, const arr& pts, const int iter, bool isTransform = true);
     const std::string findContactPoint(rai::Configuration& C, const std::string& target, const std::string& interacted_target, const std::string& waypoint);
@@ -123,7 +122,7 @@ private:
     void homeTool(rai::Configuration& C, const std::string& gripper, const std::string& tool);
     std::string useTool(rai::Configuration& C, const std::string waypoint, const std::string target);
     arr adjust_waypoint(rai::Configuration C2, std::string target, std::string waypoint_adj);
-    arr connectWaypoints(rai::Configuration C2, arr waypoints, bool view = true);
+    arr connectWaypoints(rai::Configuration C2, arr waypoints);
     bool generatePathPlan(arr& path_plan, arr goal);
     
 };
