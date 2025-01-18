@@ -1,6 +1,6 @@
-BASE = ../../botop/rai
-BASE2 = ../../botop/src
-BASE3 = ../../HMAP
+BASE = ../../../botop/rai
+BASE2 = ../../../botop/src
+BASE3 = ../../src
 
 # List all the source files you need to compile
 SRCS = main.cpp \

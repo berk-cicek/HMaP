@@ -29,8 +29,8 @@ int main(int argc, char* argv[]) {
     q_obs.reshape(total_obstacle_count, 7);
     C2.setJointState(C.getFrame("box")->getPose());
 
-    HMAPBiman hmap_biman(C, C2, qF, q_obs, target, interacted_target, total_obstacle_count, tool_list, gripper_list, filter, video_path, waypoint_factor, false);
-    hmap_biman.run();
+    HMAPBiman hmap_biman(C, C2, qF, q_obs, target, interacted_target, total_obstacle_count, tool_list, gripper_list, filter, video_path, waypoint_factor, "cam_frame_0", 0);
+    if(hmap_biman.run())
     hmap_biman.displaySolution();
     return 0;
 }

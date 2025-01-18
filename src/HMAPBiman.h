@@ -37,7 +37,6 @@ class HMAPBiman {
 public:
     HMAPBiman(rai::Configuration C, rai::Configuration C2, arr qF, arr q_obs, std::string target, std::string interacted_target, int total_obstacle_count, std::vector<std::string> tool_list, std::vector<std::string> gripper_list, double filter, std::string video_path, int waypoint_factor, std::string cam, int verbose);
     bool run();
-    arr getContactPoints();
     arr getPath();
     std::vector<std::string> getCs();
     void displaySolution();
@@ -122,7 +121,6 @@ private:
     void homeTool(rai::Configuration& C, const std::string& gripper, const std::string& tool);
     std::string useTool(rai::Configuration& C, const std::string waypoint, const std::string target);
     arr adjust_waypoint(rai::Configuration C2, std::string target, std::string waypoint_adj);
-    arr connectWaypoints(rai::Configuration C2, arr waypoints);
     bool generatePathPlan(arr& path_plan, arr goal);
     
 };
