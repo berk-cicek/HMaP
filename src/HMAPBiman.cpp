@@ -187,7 +187,7 @@ bool HMAPBiman::run(){
                 if(verbose>1) C.view(false, "Waypoint");
 
                 // MOVE THE TARGET OBJECT
-                if(gripper != "" && contact_point != "" && !is_tool_used) {
+                if(gripper != "" && contact_point != "") {
                     std::shared_ptr<SolverReturn> r = moveSkeleton(C, gripper, target, interacted_target, contact_point, waypoint);
                     if(r != nullptr) is_feas = r->eq - calib <= threshold;
                 } else {
@@ -198,9 +198,9 @@ bool HMAPBiman::run(){
                 // If the path is not feasible, use the tool to reach the object, if the tool is not available, calibrate the robot as a workaround 
                 if(!is_feas) {
                     // CHANGE THE CONTACT POINT
-                    if(!is_tool_used)
+
                     gripper = generateContactPoint(C, target, interacted_target, waypoint);
-                    if(gripper != "" && !is_tool_used) is_feas = true;
+                    if(gripper != "") is_feas = true;
                     
                     if(!is_feas) {
 
@@ -209,7 +209,7 @@ bool HMAPBiman::run(){
                             tool = useTool(C, waypoint, target);
                             idx +=1;
                             calib = calibSkeleton(C);
-                            is_tool_used = true;
+
 
                         // HOME THE ROBOT AND CALIBRATE
                         } else {
@@ -218,7 +218,7 @@ bool HMAPBiman::run(){
                             homeSkeleton(C);
                             calib = calibSkeleton(C);
                         }   
-                        if(!is_tool_used)
+
                         gripper = generateContactPoint(C, target, interacted_target, waypoint); 
                         if(gripper != ""){
                             idx +=1; 
@@ -666,6 +666,7 @@ arr HMAPBiman::getCameraView(rai::Configuration& C, const std::string& cam_name,
         }
 
         if (verbose > 1){
+            imgGl.watchImage(img, true);
             imgGl.watchImage(masked_img, true);
         }
 
@@ -797,15 +798,12 @@ const std::string HMAPBiman::findContactPoint(rai::Configuration& C, const std::
     arr contactPoints;
     int fail_lim = 3;
     int fail = 0;
-    //int fail_count = 0;
  
     max_iter = 20;
 
     for (iter = 0; iter < max_iter && fail < fail_lim; iter++) {
-        //cout << "Iteration: " << iter << " / " << max_iter << endl;
 
         if (pts.d0 == 0){
-            //cout << "No candidate contact point found" << endl;
             return "";
         }   
 
@@ -830,8 +828,6 @@ const std::string HMAPBiman::findContactPoint(rai::Configuration& C, const std::
 
             cost = ret->eq - calib;
             if(cost < threshold) {
-                //cout << "Found a feasible contact point" << endl;
-                //cout << "The " << g << " is closer to the object" << endl;
                 contact_point = "contact_point_" + std::to_string(cp_count);
                 addMarker(C, c_pts, contact_point, target, 0.001, false);
                 cp_count++;
@@ -841,12 +837,10 @@ const std::string HMAPBiman::findContactPoint(rai::Configuration& C, const std::
 
         if(ret_fail && gripper_count != 1) {
             fail++;
-            //cout << "Fail No: " << fail  << "/" << fail_lim << endl;
         }
 
 
     }
-    //cout << "Could not find a feasible contact point" << endl;
     return "";   
 }
 /*----------------------------------------------------------------------------------------------------------------------*/
@@ -960,7 +954,10 @@ std::shared_ptr<SolverReturn> HMAPBiman::moveSkeleton(rai::Configuration& C, con
     komo_path = S.getKomo_path(C, 5, 1e-3, 1e-3, 1e-5, 1e2);
     komo_waypoint = S.getKomo_waypoints(C);
 
-    komo_path->addObjective({cp_ts, -1}, FS_positionDiff, {gripper.c_str(), contact_point.c_str()}, OT_sos, {1e1});
+    if (is_aval_list[index]){
+        komo_path->addObjective({cp_ts, -1}, FS_positionDiff, {gripper.c_str(), contact_point.c_str()}, OT_sos, {1e1});
+    }
+    
 
     NLP_Solver sol;
     sol.opt.verbose = -1;
